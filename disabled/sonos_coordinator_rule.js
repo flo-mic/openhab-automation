@@ -25,8 +25,8 @@ const channelIds = {
 };
 
 const services = {
-    channelLinkRegistry: osgi.getService("org.openhab.core.thing.link.ItemChannelLinkRegistry"),
     thingRegistry: osgi.getService("org.openhab.core.thing.ThingRegistry"),
+    channelLinkRegistry: osgi.getService("org.openhab.core.thing.link.ItemChannelLinkRegistry"),
     managedLinkProvider: osgi.getService("org.openhab.core.thing.link.ManagedItemChannelLinkProvider")
 }
 
