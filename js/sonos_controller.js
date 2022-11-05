@@ -106,6 +106,10 @@ class SonosController {
         return null;
     }
 
+    getActiveZones() {
+        return this.devices.filter(device => device.getControl() === "PLAY")
+    }
+
     loadClientConfig(string) {
         let conf = JSON.parse(string);
         var client =  new SonosClient(conf.zone, conf.command, conf.targetZone, conf.uri)
@@ -126,6 +130,13 @@ class SonosController {
         }
         if(sonosClient.getCommand() === "playUri") {
             sonosClient.getZone().getCoordinator().playUri(sonosClient.getUri());
+        }
+        if(sonosClient.getCommand() === "addOrPlay") {
+            if(this.getActiveZones().length > 0){
+                this.getActiveZones()[0].getCoordinator().addDevice(sonosClient.getZone());
+            } else {
+                sonosClient.getZone().getCoordinator().playUri(sonosClient.getUri());
+            }
         }
     }
 }
@@ -151,7 +162,7 @@ class SonosDevice {
 
     addDevice(device) {
         logger.info("Adding \"" + device.label + "\" to device \"" + this.label + "\".");
-        if(device.id != this.id) {
+        if(device.id != this.id && this.id != device.getCoordinator().id) {
            this.items[channelIds.add].sendCommand(device.id)
         }
     }

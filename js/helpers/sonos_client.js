@@ -1,11 +1,17 @@
-
 class SonosClient {
 
   constructor(zone, command = null, targetZone = null, uri = null) {
-    this.zone       = zone;
-    this.command    = command;
-    this.targetZone = targetZone;
-    this.uri        = uri;
+    this.zone        = zone;
+    this.command     = command;
+    this.targetZone  = targetZone;
+    this.uri         = uri;
+    this.commandList = {
+      add: "add",
+      addOrPlay: "addOrPlay",
+      remove: "remove",
+      control: ("pause" || "pause" || "stop"),
+      playUri: "playUri"
+    }
   }
 
   send() {
@@ -26,7 +32,9 @@ class SonosClient {
   }
 
   setCommand(command) {
-    this.command = command;
+    if(this.commandList[command]) {
+      this.command = command;
+    }
     return this;
   }
 
