@@ -1,59 +1,41 @@
 load('/openhab/conf/automation/js/helpers/sonos_client.js');
+load('/openhab/conf/automation/js/helpers/device.js');
+load('/openhab/conf/automation/js/helpers/items.js');
 
 let logger = log('SonosController');
 
 const config = {
+    controllerGroupItem: "Sonos_Controller",
+    controllerTags: ["Sonos Controller"],
     sonosIdentifierString: "RINCON_",
-    sonosControllerItem: "Sonos_Controller_Command"
+    sonosControllerItem: "Sonos_Controller_Command",
+    sonosControllerUiConfig: "Sonos_Controller_UiConfig",
 }
 
 const channelIds = {
-    player: "control",
-    playUri: "playuri",
-    album: "currentalbum",
-    artist: "currentartist",
-    coverArt: "currentalbumart",
-    title: "currenttitle",
-    coordinator: "coordinator",
-    localCoordinator: "localcoordinator",
-    volume: "volume",
-    zoneName: "zonename",
-    add: "add",
-    remove: "remove",
-    standalone: "standalone",
-    mute: "mute",
+    player: { name: "control", type: "Control" },
+    playUri: { name: "playuri", type: "String" },
+    album: { name: "currentalbum", type: "String" },
+    artist: { name: "currentartist", type: "String" },
+    coverArt: { name: "currentalbumart", type: "Image" },
+    title: { name: "currenttitle", type: "String" },
+    track: { name: "currenttrack", type: "String" },
+    coordinator: { name: "coordinator", type: "String" },
+    localCoordinator: { name: "localcoordinator", type: "Switch" },
+    volume: { name: "volume", type: "Dimmer" },
+    zoneName: { name: "zonename", type: "String" },
+    zoneVolume: { name: "zoneVolume", type: "Dimmer", internal: true },
+    zoneMute: { name: "zoneMute", type: "Switch", internal: true },
+    add: { name: "add", type: "String" },
+    remove: { name: "remove", type: "String" },
+    standalone: { name: "standalone", type: "Switch" },
+    mute: { name: "mute", type: "Switch" },
 };
-
-// Add an item to the item registry
-var addItem = function (itemName = undefined, itemType = undefined, label = undefined) {
-    let item = items.getItem(itemName, true);
-    if(item) {
-        return item;
-    } else {
-        return items.addItem({name: itemName, label: label, type: itemType});
-    }
-}
 
 // Get all Sonos devices in device registry
 var getAllSonosDevices = function () {
     let foundDevices = Array.from(osgi.getService("org.openhab.core.thing.ThingRegistry").getAll());
     return foundDevices.filter(thing => thing.getUID().getId().startsWith(config.sonosIdentifierString));
-}
-
-// Get all linked items to a device channel
-var getChannelItem = function (thingUidString, channelIdString) {
-    var item = items.getItemsByTag().find(item => {
-        let channelUid = Array.from(osgi.getService("org.openhab.core.thing.link.ItemChannelLinkRegistry").getBoundChannels(item.name))
-                            .find(channel => channel.getThingUID().getId().includes(config.sonosIdentifierString));
-        if(channelUid != undefined) {
-            return channelUid.getThingUID().getId() === thingUidString && channelUid.getId() === channelIdString;
-        }
-        return null;
-    });
-    if(item === undefined) {
-        return null;
-    }
-    return items.getItem(item.name);
 }
 
 class SonosController {
@@ -64,19 +46,19 @@ class SonosController {
         // Loading all devices
         this.devices = getAllSonosDevices().map(device => new SonosDevice(device));
 
-        var muteTriggeringItems = new Array();
         var volumeTriggeringItems = new Array();
-
-        // index all items which are used for rule triggers
+        var zoneMuteTriggeringItems = new Array();
         this.devices.forEach(device => {
-            muteTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items[channelIds.mute].name));
-            volumeTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items[channelIds.volume].name));
+            volumeTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["volume"].name));
+            volumeTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneVolume"].name));
+            zoneMuteTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneMute"].name));
         });
 
+        // Add controller rule
         rules.JSRule({
             name: "Sonos Controller: Command Item",
             id: "SonosController_Command",
-            tags: ["Sonos Controller", "Mute"],
+            tags: config.controllerTags,
             description: "Executes controller commands for given zone",
             triggers: triggers.ItemCommandTrigger(config.sonosControllerItem),
             execute: event => {
@@ -86,16 +68,54 @@ class SonosController {
             }
         });
 
+        // Add volume rule
+        rules.JSRule({
+            name: "Sonos Controller: Volume Control",
+            id: "SonosController_VolumeControl",
+            tags: config.controllerTags,
+            description: "Manages zoneVolume commands",
+            triggers: volumeTriggeringItems,
+            execute: event => {
+                let zoneMembers = this.devices[0].getDeviceByItem(this, event.itemName).getZoneMembers();
+                if(event.receivedCommand) {
+                    let item = items.getItem(event.itemName);
+                    let volumeDifference = event.receivedCommand - item.history.previousState();
+                    zoneMembers.forEach(device => device.setVolume(device.getVolume() + volumeDifference));
+                } else {
+                    var volume = 0;
+                    zoneMembers.forEach(device => {
+                        volume += device.getVolume();
+                    })
+                    volume = volume / zoneMembers.length
+                    zoneMembers.forEach(device => {
+                        device.setZoneVolume(volume);
+                    })
+                }
+
+            }
+        });
+
+        // Add volume rule
+        rules.JSRule({
+            name: "Sonos Controller: Volume Mute Control",
+            id: "SonosController_VolumeMuteControl",
+            tags: config.controllerTags,
+            description: "Manages zoneMute commands",
+            triggers: zoneMuteTriggeringItems,
+            execute: event => {
+                let zoneMembers = this.devices[0].getDeviceByItem(this, event.itemName).getZoneMembers();
+                console.log(event)
+                if(event.receivedCommand === "ON") {
+                    zoneMembers.forEach(device => device.setMute(true));
+                } else {
+                    zoneMembers.forEach(device => device.setMute(false));
+                }
+            }
+        });
+        
+        this.updateUiConfig();
         logger.info("Sonos Controller is ready.");
 
-    }
-
-    getDevice(deviceId) {
-        let device = this.devices.find(device => device.id === deviceId);
-        if (device != undefined) {
-            return device;
-        }
-        return null;
     }
 
     getDeviceByZone(zoneName) {
@@ -139,106 +159,136 @@ class SonosController {
             }
         }
     }
+
+    updateUiConfig() {
+        var uiConfiguration = new Array();
+        this.devices.forEach(device => {
+            uiConfiguration.push({
+                name: device.getZoneName(),
+                items: {
+                    player: device.items["player"].name,
+                    album: device.items["album"].name,
+                    artist: device.items["artist"].name,
+                    coverArt: device.items["coverArt"].name,
+                    title: device.items["title"].name,
+                    track: device.items["track"].name,
+                    coordinator: device.items["coordinator"].name,
+                    volume: device.items["volume"].name,
+                    mute: device.items["mute"].name,
+                    zoneVolume: device.items["zoneVolume"].name,
+                    zoneMute: device.items["zoneMute"].name,
+                }    
+            });
+        });
+        uiConfigItem.postUpdate(JSON.stringify(uiConfiguration));
+    }
 }
 
-class SonosDevice {
+class SonosDevice extends Device{
     constructor(device) {
-        this.device = device;
-        this.id = device.getUID().getId();
-        this.label = device.getLabel();
-        this.items = {};
-        logger.info("New device \""+this.label+"\" initiated.");
-        // Load linked items of device in items
-        Object.keys(channelIds).forEach(key => {
-            let item = getChannelItem(this.id, channelIds[key]);
-            if(item != null) {
-                this.items[channelIds[key]] = item;
-            }
-            else  {
-                logger.error("Channel \"" + key + "\" not found for device  \""+this.label+"\".");
-            }
-        });
+        super(device);
+        this.loadItems(channelIds, false, new Array(controllerGroupItem.name), config.controllerTags); 
     };
 
     addDevice(device) {
-        logger.info("Adding \"" + device.label + "\" to device \"" + this.label + "\".");
-        if(device.id != this.id && this.id != device.getCoordinator().id) {
-           this.items[channelIds.add].sendCommand(device.id)
+        logger.info("Adding \"" + device.getLabel() + "\" to device \"" + this.getLabel() + "\".");
+        if(device.getId() != this.getId() && this.getId() != device.getCoordinator().getId()) {
+           this.items["add"].sendCommand(device.getId())
         }
     }
 
     removeDevice(device) {
-        logger.info("Removing \"" + device.label + "\" from device \"" + this.label + "\".");
-        if(device.id != this.id) {
-            this.items[channelIds.remove].sendCommand(device.id)
+        logger.info("Removing \"" + device.getLabel() + "\" from device \"" + this.getLabel() + "\".");
+        if(device.getId() != this.getId()) {
+            this.items["remove"].sendCommand(device.getId())
         } else {
-            this.items[channelIds.standalone].sendCommand("ON")
+            this.items["standalone"].sendCommand("ON")
         }
     }
 
     playUri(uri) {
-        logger.info("Playing Uri \"" + uri + "\" to device \"" + this.label + "\".");
-        this.items[channelIds.playUri].sendCommand(uri);
+        logger.info("Playing Uri \"" + uri + "\" to device \"" + this.getLabel() + "\".");
+        this.items["playUri"].sendCommand(uri);
         return this;
     }
 
     getControl() {
-        return this.items[channelIds.player].state;
+        return this.items["player"].state;
     }
 
     setControl(control) {
-        this.items[channelIds.player].sendCommand(control.toUpperCase());
+        this.items["player"].sendCommand(control.toUpperCase());
         return this;
     }
 
     getZoneName() {
-        return this.items[channelIds.zoneName].state;
-    }
-
-    getVolume() {
-        return parseFloat(this.items[channelIds.volume].state);
-    }
-
-    setVolume(value) {
-        this.items[channelIds.volume].sendCommand(value);
-        return this;
+        return this.items["zoneName"].state;
     }
 
     getMute() {
-        if(this.items[channelIds.mute].state === "ON") {
+        if(this.items["mute"].state === "ON") {
             return true;
-        };
+        }
         return false;
     }
 
     setMute(value) {
-        if(value === false) {
-            this.items[channelIds.mute].sendCommand("OFF");
-        } else {
-        this.items[channelIds.mute].sendCommand("ON");
-        }
+        var command = "OFF";
+        console.log(value)
+        if(value) {
+            command = "ON";
+        };
+        this.items["mute"].sendCommand(command);
+        return this;
+    }
+
+    getVolume() {
+        return parseFloat(this.items["volume"].state);
+    }
+
+    setVolume(value) {
+        this.items["volume"].sendCommand(value);
+        return this;
+    }
+
+    getZoneVolume(value) {
+        return parseFloat(this.items["zoneVolume"].state);
+        return this;
+    }
+
+    setZoneVolume(value) {
+        this.items["zoneVolume"].postUpdate(value);
         return this;
     }
 
     getCoordinator() {
-        return controller.getDevice(this.items[channelIds.coordinator].state)
+        if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
+            return this;
+        }
+        return this.getDevice(this, this.items["coordinator"].state);
+    }
+
+    getZoneMembers() {
+        if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
+            return new Array(this);
+        }
+        return controller.devices.filter(device => device.items["coordinator"].state === this.items["coordinator"].state);
     }
 }
 
-
 var controller = null;
+var controllerGroupItem = null;
 var controllerItem = null
+var uiConfigItem = null
+
 scriptLoaded = function () {
-    controllerItem = addItem(config.sonosControllerItem, "String", "Sonos Controller Command Item");
+    controllerGroupItem = addItem(config.controllerGroupItem, "Group", "Sonos Controller Group", undefined, config.controllerTags);
+    controllerItem = addItem(config.sonosControllerItem, "String", "Sonos Controller Command Item", new Array(controllerGroupItem.name), config.controllerTags);
+    uiConfigItem = addItem(config.sonosControllerUiConfig, "String", "Sonos Controller Ui Config Item", new Array(controllerGroupItem.name), config.controllerTags);
     loadedDate = Date.now();
     controller = new SonosController();
 }
 
 scriptUnloaded = function () {
-    logger.info("Removing controller item:" + controllerItem.name);
-    try {
-        items.removeItem(foundItem);
-    } catch (e) {
-    }
     logger.info("Sonos coordinator uninialized.");
 }
