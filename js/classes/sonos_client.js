@@ -15,7 +15,9 @@ class SonosClient {
   }
 
   send() {
-    items.getItem("Sonos_Controller_Command").sendCommand(JSON.stringify(this))
+    var message = this;
+    delete message["commandList"];
+    items.getItem("Sonos_Controller_Command").sendCommand(JSON.stringify(message))
   }
 
   getZone() {

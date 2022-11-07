@@ -1,5 +1,5 @@
-load('/openhab/conf/automation/js/helpers/sonos_client.js');
-load('/openhab/conf/automation/js/helpers/device.js');
+load('/openhab/conf/automation/js/classes/sonos_client.js');
+load('/openhab/conf/automation/js/classes/device.js');
 load('/openhab/conf/automation/js/helpers/items.js');
 
 let logger = log('SonosController');
@@ -32,26 +32,21 @@ const channelIds = {
     mute: { name: "mute", type: "Switch" },
 };
 
-// Get all Sonos devices in device registry
-var getAllSonosDevices = function () {
-    let foundDevices = Array.from(osgi.getService("org.openhab.core.thing.ThingRegistry").getAll());
-    return foundDevices.filter(thing => thing.getUID().getId().startsWith(config.sonosIdentifierString));
-}
-
-class SonosController {
+class SonosController extends DeviceController {
 
     constructor() {
-        logger.info("Sonos Controller is initializing.");
+        super("Sonos Controller");
         
         // Loading all devices
-        this.devices = getAllSonosDevices().map(device => new SonosDevice(device));
+        this.devices = this.loadDevices().map(device => new SonosDevice(device));
 
         var volumeTriggeringItems = new Array();
-        var zoneMuteTriggeringItems = new Array();
+        var muteTriggeringItems = new Array();
         this.devices.forEach(device => {
             volumeTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["volume"].name));
             volumeTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneVolume"].name));
-            zoneMuteTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneMute"].name));
+            muteTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["mute"].name));
+            muteTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneMute"].name));
         });
 
         // Add controller rule
@@ -76,10 +71,10 @@ class SonosController {
             description: "Manages zoneVolume commands",
             triggers: volumeTriggeringItems,
             execute: event => {
-                let zoneMembers = this.devices[0].getDeviceByItem(this, event.itemName).getZoneMembers();
+                let zoneMembers = this.getZoneMembers(this.getDeviceByItem(event.itemName));
                 if(event.receivedCommand) {
                     let item = items.getItem(event.itemName);
-                    let volumeDifference = event.receivedCommand - item.history.previousState();
+                    let volumeDifference = event.receivedCommand - item.history.previousState(true);
                     zoneMembers.forEach(device => device.setVolume(device.getVolume() + volumeDifference));
                 } else {
                     var volume = 0;
@@ -88,7 +83,7 @@ class SonosController {
                     })
                     volume = volume / zoneMembers.length
                     zoneMembers.forEach(device => {
-                        device.setZoneVolume(volume);
+                        device.setZoneVolume(Math.floor(volume));
                     })
                 }
 
@@ -101,21 +96,28 @@ class SonosController {
             id: "SonosController_VolumeMuteControl",
             tags: config.controllerTags,
             description: "Manages zoneMute commands",
-            triggers: zoneMuteTriggeringItems,
+            triggers: muteTriggeringItems,
             execute: event => {
-                let zoneMembers = this.devices[0].getDeviceByItem(this, event.itemName).getZoneMembers();
-                console.log(event)
-                if(event.receivedCommand === "ON") {
-                    zoneMembers.forEach(device => device.setMute(true));
+                let zone = this.getDeviceByItem(event.itemName);
+                if(event.receivedCommand) {
+                    let zoneMembers = this.getZoneMembers(zone);
+                    zoneMembers.forEach(device => {
+                        device.setMute(event.receivedCommand)
+                        device.setZoneMute(event.receivedCommand)
+                    });
                 } else {
-                    zoneMembers.forEach(device => device.setMute(false));
+                    if(event.newState === "ON") {
+                        zone.items["volume"].postUpdate(0);
+                    } else {
+                        zone.items["volume"].postUpdate(zone.items["volume"].history.previousState(true));
+                    }
+                    this.refreshZoneVolume(zone);
                 }
             }
         });
         
         this.updateUiConfig();
         logger.info("Sonos Controller is ready.");
-
     }
 
     getDeviceByZone(zoneName) {
@@ -130,6 +132,25 @@ class SonosController {
         return this.devices.filter(device => device.getControl() === "PLAY")
     }
 
+    getCoordinator(device) {
+        if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+            return this;
+        }
+        return this.getDevice(device.items["coordinator"].state);
+    }
+
+    getZoneMembers(device) {
+        if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+            return new Array(device);
+        }
+        return this.devices.filter(dev => dev.items["coordinator"].state === device.items["coordinator"].state);
+    }
+
+    loadDevices() {
+        let foundDevices = Array.from(osgi.getService("org.openhab.core.thing.ThingRegistry").getAll());
+        return foundDevices.filter(thing => thing.getUID().getId().startsWith(config.sonosIdentifierString));
+    }
+
     loadClientConfig(string) {
         let conf = JSON.parse(string);
         var client =  new SonosClient(conf.zone, conf.command, conf.targetZone, conf.uri)
@@ -140,24 +161,37 @@ class SonosController {
 
     executeClientCommand(sonosClient) {
         if(sonosClient.getCommand() === "add") {
-            sonosClient.getTargetZone().getCoordinator().addDevice(sonosClient.getZone());
+            this.getCoordinator(sonosClient.getTargetZone()).addDevice(this, sonosClient.getZone());
         }
         if(sonosClient.getCommand() === "remove") {
-            sonosClient.getZone().getCoordinator().removeDevice(sonosClient.getZone());
+            this.getCoordinator(sonosClient.getTargetZone()).removeDevice(sonosClient.getZone());
         }
         if(sonosClient.getCommand() === ("pause" || "pause" || "stop")) {
-            sonosClient.getZone().getCoordinator().setControl(sonosClient.getCommand());
+            this.getCoordinator(sonosClient.getTargetZone()).setControl(sonosClient.getCommand());
         }
         if(sonosClient.getCommand() === "playUri") {
-            sonosClient.getZone().getCoordinator().playUri(sonosClient.getUri());
+            this.getCoordinator(sonosClient.getTargetZone()).playUri(sonosClient.getUri());
         }
         if(sonosClient.getCommand() === "addOrPlay") {
             if(this.getActiveZones().length > 0){
-                this.getActiveZones()[0].getCoordinator().addDevice(sonosClient.getZone());
+                this.getCoordinator(this.getActiveZones()[0]).addDevice(this, sonosClient.getZone());
             } else {
-                sonosClient.getZone().getCoordinator().playUri(sonosClient.getUri());
+                this.getCoordinator(sonosClient.getTargetZone()).playUri(sonosClient.getUri());
             }
         }
+    }
+
+    refreshZoneVolume(zone) {
+        let zoneMembers = this.getZoneMembers(zone);
+        var isMute = true;
+        zoneMembers.forEach(device => {
+            if(device.getMute() === false) {
+                isMute = false;
+            }
+        });
+        zoneMembers.forEach(device => {
+            device.setZoneMute(isMute);
+        });
     }
 
     updateUiConfig() {
@@ -190,9 +224,9 @@ class SonosDevice extends Device{
         this.loadItems(channelIds, false, new Array(controllerGroupItem.name), config.controllerTags); 
     };
 
-    addDevice(device) {
+    addDevice(controller, device) {
         logger.info("Adding \"" + device.getLabel() + "\" to device \"" + this.getLabel() + "\".");
-        if(device.getId() != this.getId() && this.getId() != device.getCoordinator().getId()) {
+        if(device.getId() != this.getId() && this.getId() != controller.getCoordinator(device).getId()) {
            this.items["add"].sendCommand(device.getId())
         }
     }
@@ -234,11 +268,19 @@ class SonosDevice extends Device{
 
     setMute(value) {
         var command = "OFF";
-        console.log(value)
-        if(value) {
+        if(value === true || value === "ON") {
             command = "ON";
         };
         this.items["mute"].sendCommand(command);
+        return this;
+    }
+
+    setZoneMute(value) {
+        var command = "OFF";
+        if(value === true || value === "ON") {
+            command = "ON";
+        };
+        this.items["zoneMute"].postUpdate(command);
         return this;
     }
 
@@ -253,26 +295,11 @@ class SonosDevice extends Device{
 
     getZoneVolume(value) {
         return parseFloat(this.items["zoneVolume"].state);
-        return this;
     }
 
     setZoneVolume(value) {
         this.items["zoneVolume"].postUpdate(value);
         return this;
-    }
-
-    getCoordinator() {
-        if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
-            return this;
-        }
-        return this.getDevice(this, this.items["coordinator"].state);
-    }
-
-    getZoneMembers() {
-        if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
-            return new Array(this);
-        }
-        return controller.devices.filter(device => device.items["coordinator"].state === this.items["coordinator"].state);
     }
 }
 

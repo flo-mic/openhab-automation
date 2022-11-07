@@ -1,5 +1,52 @@
 load('/openhab/conf/automation/js/helpers/items.js');
 
+class DeviceController {
+  constructor(controllerName) {
+    this.devices = null;
+    this.label = controllerName;
+    logger.info("New controller \"" + this.label + "\" initiated.");
+    
+  };
+
+  getLabel() {
+    return this.label;
+  }
+
+  getDevice(deviceId) {
+    let device = this.devices.find(device => device.getId() === deviceId);
+    if (device != undefined) {
+        return device;
+    }
+    return null;
+  }
+
+  getDevices() {
+    return this.devices;
+  }
+
+  getDeviceByItem(itemName) {
+    var device = null;
+    this.devices.forEach(dev => {
+      Object.entries(dev.items).forEach(([key, item]) => {
+        if(item.name === itemName) { 
+          device = dev;
+        }
+      })
+    });
+    return device;
+  }
+
+  uninitialize() {
+    this.devices.forEach(device => {
+      device.dynamic_items.forEach(item => {
+        this.removeChannelItemLink(item);
+      });
+      delete this.devices[device]
+    })
+  }
+}
+
+
 class Device {
   constructor(device) {
     this.device = device;
@@ -12,12 +59,11 @@ class Device {
     
   };
 
-  uninitialize(controller) {
+  uninitialize() {
     this.dynamic_items.forEach(item => {
       this.removeChannelItemLink(item);
     })
     this.dynamic_items = new Array();
-    controller.devices = controller.devices.filter(device => device != this);
   }
 
   loadItems(channels, createMissingItems = false, parentGroups = undefined, tags) {
@@ -54,26 +100,6 @@ class Device {
 
   getLocation() {
     return this.location;
-  }
-
-  getDevice(controller, deviceId) {
-    let device = controller.devices.find(device => device.getId() === deviceId);
-    if (device != undefined) {
-        return device;
-    }
-    return null;
-  }
-
-  getDeviceByItem(controller, itemName) {
-    var device = null;
-    controller.devices.forEach(dev => {
-      Object.entries(dev.items).forEach(([key, item]) => {
-        if(item.name === itemName) { 
-          device = dev;
-        }
-      })
-    });
-    return device;
   }
 
   getChannel(channelId) {

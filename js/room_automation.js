@@ -1,4 +1,4 @@
-load('/openhab/conf/automation/js/helpers/sonos_client.js');
+load('/openhab/conf/automation/js/classes/sonos_client.js');
 
 const radioUrl = "http://streams.planetradio.de/planetradio/mp3/playerid:RTFFH/hqlivestream.mp3";
 

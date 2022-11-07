@@ -1,0 +1,344 @@
+uid: sonos_coordinator_widget
+tags: []
+props:
+  parameters:
+    - description: Text for the title caption
+      label: Title caption
+      name: titleCaption
+      required: false
+      type: TEXT
+    - description: Text for the artist caption
+      label: Artist caption
+      name: artistCaption
+      required: false
+      type: TEXT
+    - description: Text for the album caption
+      label: Album caption
+      name: albumCaption
+      required: false
+      type: TEXT
+    - description: Text for the volume controls caption
+      label: Volume controls caption
+      name: volumeControlsCaption
+      required: false
+      type: TEXT
+    - description: Text for the group configuration caption
+      label: Group configuration caption
+      name: groupConfigurationCaption
+      required: false
+      type: TEXT
+  parameterGroups: []
+timestamp: Nov 7, 2022, 11:50:27 AM
+component: f7-card
+config: {}
+slots:
+  default:
+    - component: oh-swiper
+      config:
+        navigation: true
+        pagination: true
+        style:
+          width: 100%
+      slots:
+        slides:
+          - component: oh-repeater
+            config:
+              for: zone
+              fragment: true
+              in: =JSON.parse(items['Sonos_Controller_UiConfig'].state)
+              sourceType: array
+            slots:
+              default:
+                - component: f7-swiper-slide
+                  slots:
+                    default:
+                      - component: oh-masonry
+                        config:
+                          cols:
+                            "1000": 1
+                            default: 2
+                        slots:
+                          default:
+                            - component: f7-block
+                              config: {}
+                              slots:
+                                default:
+                                  - component: f7-card
+                                    config:
+                                      content: "=items[loop.zone.items.artist].state.length > 1 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-').length < 2 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-')[2].trim().split('/')"
+                                      noShadow: true
+                                      style:
+                                        font-size: +140%
+                                        min-height: 80.5px
+                                        text-align: left
+                                        margin-top: -0%
+                                        margin-bottom: -10px
+                                      title: "=props.titleCaption === undefined ? 'Title' : props.titleCaption"
+                                  - component: f7-card
+                                    config:
+                                      content: "=items[loop.zone.items.artist].state.length > 1 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-').length < 2 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-')[1].trim().split('/')"
+                                      noShadow: true
+                                      style:
+                                        font-size: +140%
+                                        min-height: 80.5px
+                                        text-align: left
+                                        margin-bottom: -10px
+                                      title: "=props.artistCaption === undefined ? 'Artist' : props.artistCaption"
+                                  - component: f7-card
+                                    config:
+                                      content: =items[loop.zone.items.album].state
+                                      noShadow: true
+                                      style:
+                                        font-size: +140%
+                                        min-height: 80.5px
+                                        text-align: left
+                                        margin-bottom: -10px
+                                      title: "=props.albumCaption === undefined ? 'Album' : props.albumCaption"
+                            - component: f7-block
+                              slots:
+                                default:
+                                  - component: f7-block
+                                    config:
+                                      style:
+                                        align-items: center
+                                        display: grid
+                                        grid-template-columns: 1fr
+                                        grid-template-rows: 1fr
+                                        justify-content: center
+                                    slots:
+                                      default:
+                                        - component: oh-image
+                                          config:
+                                            item: =loop.zone.items.coverArt
+                                            style:
+                                              grid-area: 1 / 1 / 1 / 1
+                                              margin: auto
+                                              margin-top: +10%
+                                              transition: 1s ease-in-out
+                                              width: 90%
+                                              z-index: 2
+                                            visible: =items[loop.zone.items.coverArt].state !== 'UNDEF' && items[loop.zone.items.coverArt].state !== 'NULL'
+                      - component: f7-row
+                        config:
+                          style:
+                            justify-content: center
+                        slots:
+                          default:
+                            - component: oh-player-item
+                              config:
+                                class:
+                                  - display-flex
+                                  - align-content-stretch
+                                  - align-items-center
+                                  - justify-content-space-around
+                                  - margin-top
+                                item: =loop.zone.items.player
+                                style:
+                                  width: 150px
+                      - component: f7-card
+                        config:
+                          class: margin display-flex align-items-center justify-content-center
+                          noShadow: true
+                        slots:
+                          default:
+                            - component: f7-icon
+                              config:
+                                class: margin-horizontal
+                                f7: "=items[loop.zone.items.zoneMute].state === 'ON' ? 'speaker_slash' : items[loop.zone.items.zoneVolume].state === 'UNDEF' || items[loop.zone.items.zoneVolume].state === 'NULL' ? 'speaker_2' :  items[loop.zone.items.zoneVolume].state > 66 ? 'speaker_3' : items[loop.zone.items.zoneVolume].state > 33 ? 'speaker_2' : items[loop.zone.items.zoneVolume].state > 0 ? 'speaker_1' : 'speaker'"
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[loop.zone.items.zoneMute].state === 'ON' ? 'OFF' : 'ON'"
+                                      actionItem: =loop.zone.items.zoneMute
+                                      style:
+                                        height: 100%
+                                        position: absolute
+                                        top: 0px
+                                        width: 100%
+                            - component: oh-slider
+                              config:
+                                label: true
+                                releaseOnly: true
+                                style:
+                                  width: 70%
+                                  maxWidth: 350px
+                                unit: "%"
+                                item: =loop.zone.items.zoneVolume
+                                class:
+                                  - display-flex
+                                  - margin-horizontal
+                                  - align-content-stretch
+                                  - align-items-center
+                                  - justify-content-space-around
+                            - component: oh-button
+                              config:
+                                action: variable
+                                actionVariable: zone
+                                actionVariableValue: =loop.zone
+                                style:
+                                  position: absolute
+                                  height: 200%
+                                  top: -50%
+                                  width: 100%
+                                  maxWidth: 350px
+                                popoverOpen: .popoverVolume
+                              slots:
+                                default:
+                                  - component: f7-popover
+                                    config:
+                                      class: popoverVolume
+                                      style:
+                                        min-width: 350px
+                                        max-width: 500px
+                                    slots:
+                                      default:
+                                        - component: oh-repeater
+                                          config:
+                                            for: zoneVolume
+                                            fragment: true
+                                            in: =JSON.parse(items['Sonos_Controller_UiConfig'].state)
+                                            filter: '((items[vars.zone.items.coordinator].state !== "NULL" || items[vars.zone.items.coordinator].state !== "NULL") && items[vars.zone.items.coordinator].state === items[loop.zoneVolume.items.coordinator].state) ? true : false'
+                                            sourceType: array
+                                          slots:
+                                            default:
+                                              - component: f7-card
+                                                config:
+                                                  style:
+                                                    height: 60px
+                                                slots:
+                                                  default:
+                                                    - component: f7-row
+                                                      slots:
+                                                        default:
+                                                          - component: Label
+                                                            config:
+                                                              style:
+                                                                fontSize: 18px
+                                                                text-decoration: underline
+                                                              class:
+                                                                - margin-left
+                                                              text: =loop.zoneVolume.name
+                                                          - component: Label
+                                                            config:
+                                                              style:
+                                                                fontSize: 18px
+                                                              class:
+                                                                - margin-right
+                                                              text: =items[loop.zoneVolume.items.volume].state
+                                                    - component: f7-row
+                                                      slots:
+                                                        default:
+                                                          - component: f7-icon
+                                                            config:
+                                                              class: margin-horizontal
+                                                              f7: "=items[loop.zoneVolume.items.mute].state === 'ON' ? 'speaker_slash' : items[loop.zoneVolume.items.volume].state === 'UNDEF' || items[loop.zoneVolume.items.volume].state === 'NULL' ? 'speaker_2' :  items[loop.zoneVolume.items.volume].state > 66 ? 'speaker_3' : items[loop.zoneVolume.items.volume].state > 33 ? 'speaker_2' : items[loop.zoneVolume.items.volume].state > 0 ? 'speaker_1' : 'speaker'"
+                                                              size: 30
+                                                            slots:
+                                                              default:
+                                                                - component: oh-button
+                                                                  config:
+                                                                    action: command
+                                                                    actionCommand: "=items[loop.zoneVolume.items.mute].state === 'ON' ? 'OFF' : 'ON'"
+                                                                    actionItem: =loop.zoneVolume.items.mute
+                                                                    style:
+                                                                      height: 100%
+                                                                      position: absolute
+                                                                      top: 0px
+                                                                      width: 100%
+                                                          - component: oh-slider
+                                                            config:
+                                                              style:
+                                                                width: calc(100% - 30%)
+                                                              min: 0
+                                                              item: =loop.zoneVolume.items.volume
+                                                              class:
+                                                                - display-flex
+                                                                - margin-right
+                            - component: f7-icon
+                              config:
+                                class: margin-horizontal
+                                f7: hifispeaker
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: variable
+                                      actionVariable: zone
+                                      actionVariableValue: =loop.zone
+                                      style:
+                                        position: absolute
+                                        height: 200%
+                                        top: -50%
+                                        width: 100%
+                                        maxWidth: 350px
+                                      popoverOpen: .popoverZones
+                                  - component: f7-popover
+                                    config:
+                                      class: popoverZones
+                                      style:
+                                        min-width: 350px
+                                        max-width: 500px
+                                    slots:
+                                      default:
+                                        - component: oh-repeater
+                                          config:
+                                            for: zoneSpeaker
+                                            fragment: true
+                                            in: =JSON.parse(items['Sonos_Controller_UiConfig'].state)
+                                            sourceType: array
+                                            containerClasses:
+                                              - display-flex
+                                              - flex-direction-column
+                                          slots:
+                                            default:
+                                              - component: f7-card
+                                                config:
+                                                  class: '=(loop.zoneSpeaker.name.length > 1) ? "display-inherit" : "display-none"'
+                                                  style:
+                                                    height: 40px
+                                                slots:
+                                                  default:
+                                                    - component: f7-row
+                                                      config:
+                                                        class:
+                                                          - display-flex
+                                                          - align-content-stretch
+                                                          - align-items-center
+                                                          - justify-content-space-around
+                                                        style:
+                                                          padding-top: 5px
+                                                      slots:
+                                                        default:
+                                                          - component: f7-icon
+                                                            config:
+                                                              class: margin-horizontal
+                                                              f7: '=(items[vars.zone.items.coordinator].state === items[loop.zoneSpeaker.items.coordinator].state) ? "checkmark_alt_circle_fill" : "circle"'
+                                                              size: 30
+                                                          - component: Label
+                                                            config:
+                                                              style:
+                                                                fontSize: 18px
+                                                              text: =loop.zoneSpeaker.name
+                                                          - component: f7-icon
+                                                            config:
+                                                              class: margin-horizontal
+                                                              f7: '=(items[loop.zoneSpeaker.items.player].state === "PLAY") ? "chart_bar_alt_fill" : ""'
+                                                              size: 30
+                                                          - component: oh-button
+                                                            config:
+                                                              action: command
+                                                              actionCommand: '=(items[vars.zone.items.coordinator].state === items[loop.zoneSpeaker.items.coordinator].state) ? "{\"zone\":\"" + loop.zoneSpeaker.name + "\",\"command\":\"remove\"}" : "{\"zone\":\"" + loop.zoneSpeaker.name + "\",\"command\":\"add\",\"targetZone\":\"" + vars.zone.name + "\"}"'
+                                                              actionItem: Sonos_Controller_Command
+                                                              style:
+                                                                height: 100%
+                                                                position: absolute
+                                                                top: 0px
+                                                                width: 100%
+                      - component: f7-card
+                        config:
+                          style:
+                            height: 30px
