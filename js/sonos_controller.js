@@ -30,6 +30,13 @@ const channelIds = {
     remove: { name: "remove", type: "String" },
     standalone: { name: "standalone", type: "Switch" },
     mute: { name: "mute", type: "Switch" },
+    bass: { name: "bass", type: "Number" },
+    treble: { name: "treble", type: "Number" },
+    loudness: { name: "loudness", type: "Switch" },
+    repeat: { name: "repeat", type: "String" },
+    shuffle: { name: "shuffle", type: "Switch" },
+    tuneIn: { name: "tuneinstationid", type: "String" },
+    radio: { name: "radio", type: "String" },
 };
 
 class SonosController extends DeviceController {
@@ -40,6 +47,7 @@ class SonosController extends DeviceController {
         // Loading all devices
         this.devices = this.loadDevices().map(device => new SonosDevice(device));
 
+        // Identify item trigger event for rules
         var volumeTriggeringItems = new Array();
         var muteTriggeringItems = new Array();
         this.devices.forEach(device => {
@@ -83,14 +91,14 @@ class SonosController extends DeviceController {
                     })
                     volume = volume / zoneMembers.length
                     zoneMembers.forEach(device => {
-                        device.setZoneVolume(Math.floor(volume));
+                        device.setZoneVolume(parseInt(volume));
                     })
                 }
 
             }
         });
 
-        // Add volume rule
+        // Add volume on mute rule
         rules.JSRule({
             name: "Sonos Controller: Volume Mute Control",
             id: "SonosController_VolumeMuteControl",
@@ -116,6 +124,7 @@ class SonosController extends DeviceController {
             }
         });
         
+        // Update ui config item
         this.updateUiConfig();
         logger.info("Sonos Controller is ready.");
     }
@@ -211,6 +220,11 @@ class SonosController extends DeviceController {
                     mute: device.items["mute"].name,
                     zoneVolume: device.items["zoneVolume"].name,
                     zoneMute: device.items["zoneMute"].name,
+                    bass: device.items["bass"].name,
+                    treble: device.items["treble"].name,
+                    loudness: device.items["loudness"].name,
+                    repeat: device.items["repeat"].name,
+                    shuffle: device.items["shuffle"].name,
                 }    
             });
         });
@@ -221,7 +235,7 @@ class SonosController extends DeviceController {
 class SonosDevice extends Device{
     constructor(device) {
         super(device);
-        this.loadItems(channelIds, false, new Array(controllerGroupItem.name), config.controllerTags); 
+        this.loadItems(channelIds, true, new Array(controllerGroupItem.name), config.controllerTags); 
     };
 
     addDevice(controller, device) {
@@ -285,19 +299,31 @@ class SonosDevice extends Device{
     }
 
     getVolume() {
-        return parseFloat(this.items["volume"].state);
+        return parseInt(this.items["volume"].state);
     }
 
     setVolume(value) {
+        if(value < 0) {
+            value = 0;
+        }
+        if(value > 100) {
+            value = 100;
+        }
         this.items["volume"].sendCommand(value);
         return this;
     }
 
     getZoneVolume(value) {
-        return parseFloat(this.items["zoneVolume"].state);
+        return parseInt(this.items["zoneVolume"].state);
     }
 
     setZoneVolume(value) {
+        if(value < 0) {
+            value = 0;
+        }
+        if(value > 100) {
+            value = 100;
+        }
         this.items["zoneVolume"].postUpdate(value);
         return this;
     }

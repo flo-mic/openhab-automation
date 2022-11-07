@@ -122,7 +122,7 @@ class Device {
   }
 
   createChannelItemLink(item, channel) {
-    var link = new Java.type("org.openhab.core.thing.link.ItemChannelLink")(item.name, channel.getUID());
+    var link = new (Java.type("org.openhab.core.thing.link.ItemChannelLink"))(item.name, channel.getUID());
     osgi.getService("org.openhab.core.thing.link.ManagedItemChannelLinkProvider").add(link);
   }
 

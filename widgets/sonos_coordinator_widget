@@ -22,9 +22,9 @@ props:
       name: volumeControlsCaption
       required: false
       type: TEXT
-    - description: Text for the group configuration caption
-      label: Group configuration caption
-      name: groupConfigurationCaption
+    - description: Text for the groups caption
+      label: Groups caption
+      name: groupsCaption
       required: false
       type: TEXT
   parameterGroups: []
@@ -52,6 +52,47 @@ slots:
                 - component: f7-swiper-slide
                   slots:
                     default:
+                      - component: f7-row
+                        slots:
+                          default:
+                            - component: Label
+                              config:
+                                style:
+                                  width: 100%
+                                  max-height: 30px
+                                  fontSize: 22px
+                                  text-align: center
+                                  padding-bottom: 40px
+                                class:
+                                  - margin-horizontal
+                                  - card-header
+                                  - display-block
+                                text: =loop.zone.name
+                            - component: f7-icon
+                              config:
+                                class: margin-horizontal
+                                f7: 'gear_alt'
+                                size: 30
+                                style:
+                                  position: absolute
+                                  top: 15px
+                                  right: 10px
+                              slots:
+                                default:
+                                - component: oh-button
+                                  config:
+                                    action: variable
+                                    actionVariable: zone
+                                    actionVariableValue: =loop.zone
+                                    style:
+                                      position: absolute
+                                      top: -50%
+                                      left: -50%
+                                      height: 200%
+                                      width: 200%
+                                      maxWidth: 350px
+                                    popoverOpen: .popoverVolume
+                                  
                       - component: oh-masonry
                         config:
                           cols:
@@ -122,19 +163,59 @@ slots:
                         config:
                           style:
                             justify-content: center
+                          class:
+                            - display-flex
+                            - align-content-stretch
+                            - align-items-center
+                            - justify-content-space-evenly
+                            - margin-top
                         slots:
                           default:
+                            - component: f7-icon
+                              config:
+                                color: '=(items[loop.zone.items.shuffle].state === "NULL" || items[loop.zone.items.shuffle].state === "UNDEF" || items[loop.zone.items.shuffle].state === "OFF") ? "" : "green"'
+                                class: margin-left
+                                f7: "shuffle"
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[loop.zone.items.shuffle].state === 'ON' ? 'OFF' : 'ON'"
+                                      actionItem: =loop.zone.items.shuffle
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        maxWidth: 350px
                             - component: oh-player-item
                               config:
-                                class:
-                                  - display-flex
-                                  - align-content-stretch
-                                  - align-items-center
-                                  - justify-content-space-around
-                                  - margin-top
                                 item: =loop.zone.items.player
                                 style:
                                   width: 150px
+                            - component: f7-icon
+                              config:
+                                color: '=(items[loop.zone.items.repeat].state === "NULL" || items[loop.zone.items.repeat].state === "UNDEF" || items[loop.zone.items.repeat].state === "OFF") ? "" : "green"'
+                                class: margin-right
+                                f7: '=(items[loop.zone.items.repeat].state === "NULL" || items[loop.zone.items.repeat].state === "UNDEF" || items[loop.zone.items.repeat].state === "OFF" | items[loop.zone.items.repeat].state === "ALL") ? "repeat" : "repeat_1"'
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[loop.zone.items.repeat].state === 'ALL' ? 'ONE' : items[loop.zone.items.repeat].state === 'ONE' ? 'OFF' : 'ALL'"
+                                      actionItem: =loop.zone.items.repeat
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        maxWidth: 350px
                       - component: f7-card
                         config:
                           class: margin display-flex align-items-center justify-content-center
@@ -154,10 +235,11 @@ slots:
                                       actionCommand: "=items[loop.zone.items.zoneMute].state === 'ON' ? 'OFF' : 'ON'"
                                       actionItem: =loop.zone.items.zoneMute
                                       style:
-                                        height: 100%
                                         position: absolute
-                                        top: 0px
-                                        width: 100%
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
                             - component: oh-slider
                               config:
                                 label: true
@@ -180,9 +262,9 @@ slots:
                                 actionVariableValue: =loop.zone
                                 style:
                                   position: absolute
-                                  height: 200%
                                   top: -50%
                                   width: 100%
+                                  height: 200%
                                   maxWidth: 350px
                                 popoverOpen: .popoverVolume
                               slots:
@@ -257,6 +339,68 @@ slots:
                                                               class:
                                                                 - display-flex
                                                                 - margin-right
+                                        - component: f7-row
+                                          config:
+                                            style: 
+                                              height: 60px
+                                        - component: f7-card
+                                          config:
+                                            style:
+                                              height: 60px
+                                              position: fixed
+                                              bottom: 0px
+                                              left: 0px
+                                              right: 0px
+                                          slots:
+                                            default:
+                                              - component: f7-row
+                                                slots:
+                                                  default:
+                                                    - component: Label
+                                                      config:
+                                                        style:
+                                                          fontSize: 18px
+                                                          text-decoration: underline
+                                                        class:
+                                                          - margin-left
+                                                        text: "=props.groupsCaption === undefined ? 'Groups' : props.groupsCaption"
+                                                    - component: Label
+                                                      config:
+                                                        style:
+                                                          fontSize: 18px
+                                                        class:
+                                                          - margin-right
+                                                        text: =items[loop.zone.items.zoneVolume].state
+                                              - component: f7-row
+                                                slots:
+                                                  default:
+                                                    - component: f7-icon
+                                                      config:
+                                                        class: margin-horizontal
+                                                        f7: "=items[loop.zone.items.zoneMute].state === 'ON' ? 'speaker_slash' : items[loop.zone.items.zoneVolume].state === 'UNDEF' || items[loop.zone.items.zoneVolume].state === 'NULL' ? 'speaker_2' :  items[loop.zone.items.zoneVolume].state > 66 ? 'speaker_3' : items[loop.zone.items.zoneVolume].state > 33 ? 'speaker_2' : items[loop.zone.items.zoneVolume].state > 0 ? 'speaker_1' : 'speaker'"
+                                                        size: 30
+                                                      slots:
+                                                        default:
+                                                          - component: oh-button
+                                                            config:
+                                                              action: command
+                                                              actionCommand: "=items[loop.zone.items.zoneMute].state === 'ON' ? 'OFF' : 'ON'"
+                                                              actionItem: =loop.zone.items.zoneMute
+                                                              style:
+                                                                height: 100%
+                                                                position: absolute
+                                                                top: 0px
+                                                                width: 100%
+                                                    - component: oh-slider
+                                                      config:
+                                                        style:
+                                                          width: calc(100% - 30%)
+                                                        min: 0
+                                                        item: =loop.zone.items.zoneVolume
+                                                        class:
+                                                          - display-flex
+                                                          - margin-right
+                                                                
                             - component: f7-icon
                               config:
                                 class: margin-horizontal
@@ -271,9 +415,10 @@ slots:
                                       actionVariableValue: =loop.zone
                                       style:
                                         position: absolute
-                                        height: 200%
                                         top: -50%
-                                        width: 100%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
                                         maxWidth: 350px
                                       popoverOpen: .popoverZones
                                   - component: f7-popover
