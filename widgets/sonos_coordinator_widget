@@ -59,6 +59,7 @@ slots:
         style:
           min-width: 350px
           max-width: 500px
+          background-color: var(--f7-page-bg-color)
       slots:
         default:
           - component: oh-repeater
@@ -71,17 +72,19 @@ slots:
             slots:
               default:
                 - component: f7-card
-                  config:
-                    style:
-                      height: 60px
                   slots:
                     default:
                       - component: f7-row
+                        config:
+                          class:
+                            - margin-vertical
                         slots:
                           default:
                             - component: f7-col
                               config: 
                                 style:
+                                  margin-top: 5px
+                                  margin-bottom: 5px
                                   width: 85%
                               slots:
                                 default:
@@ -102,7 +105,7 @@ slots:
                                               fontSize: 18px
                                             class:
                                               - margin-right
-                                            text: =items[loop.zoneVolume.items.volume].state
+                                            text: =Number.parseInt(items[loop.zoneVolume.items.volume].state)
                                   - component: f7-row
                                     slots:
                                       default:
@@ -152,15 +155,24 @@ slots:
                                       popupOpen: .popupSoundSettings
                                       popoverClose: .popoverVolumeSettings
           - component: f7-row
+            class:
+              - margin-vertical
+              - margin-horizontal
             config:
               style:
-                height: 60px
+                height: 74px
+                border-top-style: groove
+                border-top-width: 0.1px
+                margin-left: 3%
+                margin-right: 3%
+                padding-top: 10px 
           - component: f7-card
             config:
               style:
+                margin-bottom: 5px
                 height: 60px
                 position: fixed
-                bottom: 0px
+                bottom: 10px
                 left: 0px
                 right: 0px
             slots:
@@ -182,7 +194,7 @@ slots:
                             fontSize: 18px
                           class:
                             - margin-right
-                          text: =items[vars.zone.items.zoneVolume].state
+                          text: =Number.parseInt(items[vars.zone.items.zoneVolume].state)
                 - component: f7-row
                   slots:
                     default:
@@ -215,209 +227,217 @@ slots:
     
     - component: f7-popup
       config:
-        class: popupSoundSettings
+        class: 
+          - popupSoundSettings
         style:
-          min-width: 350px
-          max-width: 400px
-          min-height: 300px
-          max-height: 450px
+          visibility: hidden
       slots:
         default:
-          - component: Label
-            config:
+          - component: f7-page
+            config: 
               style:
-                width: 100%
-                max-height: 30px
-                fontSize: 20px
-                text-align: center
-                padding-bottom: 40px
-              class:
-                - margin-horizontal
-                - card-header
-                - display-block
-              text: '=(props.settingsCaption === undefined ? "Settings" : props.settingsCaption) + " " + vars.soundSettings.name'
-          - component: f7-card
+                top: +25%
+                left: calc(50% - 200px)
+                border-radius: 5px
+                visibility: visible
+                width: 400px
+                height: 345px
             slots:
               default:
-                - component: f7-row
+                - component: Label
+                  config:
+                    style:
+                      max-height: 30px
+                      fontSize: 20px
+                      text-align: center
+                      padding-bottom: 40px
+                    class:
+                      - margin-horizontal
+                      - card-header
+                      - display-block
+                    text: '=(props.settingsCaption === undefined ? "Settings" : props.settingsCaption) + " " + vars.soundSettings.name'
+                - component: f7-card
                   slots:
                     default:
-                      - component: Label
-                        config:
-                          style:
-                            fontSize: 18px
-                          class:
-                            - margin-left
-                            - margin-top
-                          text: "=props.bassCaption === undefined ? 'Bass' : props.bassCaption"
-                      - component: Label
-                        config:
-                          style:
-                            fontSize: 18px
-                          class:
-                            - margin-right
-                            - margin-top
-                          text: '=items[vars.soundSettings.items.bass].state'
-                - component: f7-row                      
-                  slots:
-                    default:
-                      - component: f7-icon
-                        config:
-                          class: 
-                            - margin-left
-                            - margin-bottom
-                          f7: 'minus_circle'
-                          size: 30
+                      - component: f7-row
                         slots:
                           default:
-                            - component: oh-button
+                            - component: Label
                               config:
-                                action: command
-                                actionCommand: "=items[vars.soundSettings.items.bass].state < -9 ? -10 : Math.round(items[vars.soundSettings.items.bass].state) - 1"
-                                actionItem: =vars.soundSettings.items.bass
                                 style:
-                                  position: absolute
-                                  top: -50%
-                                  left: -50%
-                                  width: 200%
-                                  height: 200%
-                                  z-index: +2
-                      - component: oh-slider
-                        config:
-                          class: 
-                            - display-flex
-                            - margin-bottom
-                          style:
-                            width: calc(100% - 100px)
-                          min: -10
-                          max: +10
-                          step: 1
-                          scale: true
-                          scaleSteps: 4
-                          scaleSubSteps: 1
-                          item: =vars.soundSettings.items.bass
-                      - component: f7-icon
-                        config:
-                          class: 
-                            - margin-right
-                            - margin-bottom
-                          f7: 'plus_circle'
-                          size: 30
+                                  fontSize: 18px
+                                class:
+                                  - margin-left
+                                  - margin-top
+                                text: "=props.bassCaption === undefined ? 'Bass' : props.bassCaption"
+                            - component: Label
+                              config:
+                                style:
+                                  fontSize: 18px
+                                class:
+                                  - margin-right
+                                  - margin-top
+                                text: '=items[vars.soundSettings.items.bass].state'
+                      - component: f7-row                      
                         slots:
                           default:
-                            - component: oh-button
+                            - component: f7-icon
                               config:
-                                action: command
-                                actionCommand: "=items[vars.soundSettings.items.bass].state > 9 ? 10 : Math.round(items[vars.soundSettings.items.bass].state) + 1"
-                                actionItem: =vars.soundSettings.items.bass
+                                class: 
+                                  - margin-left
+                                  - margin-bottom
+                                f7: 'minus_circle'
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[vars.soundSettings.items.bass].state < -9 ? -10 : Math.round(items[vars.soundSettings.items.bass].state) - 1"
+                                      actionItem: =vars.soundSettings.items.bass
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        z-index: +2
+                            - component: oh-slider
+                              config:
+                                class: 
+                                  - display-flex
+                                  - margin-bottom
                                 style:
-                                  position: absolute
-                                  top: -50%
-                                  left: -50%
-                                  width: 200%
-                                  height: 200%
-                                  z-index: +2
-          - component: f7-card
-            slots:
-              default:
-                - component: f7-row
+                                  width: calc(100% - 100px)
+                                min: -10
+                                max: +10
+                                step: 1
+                                scale: true
+                                scaleSteps: 4
+                                scaleSubSteps: 1
+                                item: =vars.soundSettings.items.bass
+                            - component: f7-icon
+                              config:
+                                class: 
+                                  - margin-right
+                                  - margin-bottom
+                                f7: 'plus_circle'
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[vars.soundSettings.items.bass].state > 9 ? 10 : Math.round(items[vars.soundSettings.items.bass].state) + 1"
+                                      actionItem: =vars.soundSettings.items.bass
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        z-index: +2
+                - component: f7-card
                   slots:
                     default:
-                      - component: Label
-                        config:
-                          style:
-                            fontSize: 18px
-                          class:
-                            - margin-left
-                            - margin-top
-                          text: "=props.trebleCaption === undefined ? 'Treble' : props.trebleCaption"
-                      - component: Label
-                        config:
-                          style:
-                            fontSize: 18px
-                          class:
-                            - margin-right
-                            - margin-top
-                          text: '=items[vars.soundSettings.items.treble].state'
-                - component: f7-row                      
-                  slots:
-                    default:
-                      - component: f7-icon
-                        config:
-                          class: 
-                            - margin-left
-                            - margin-bottom
-                          f7: 'minus_circle'
-                          size: 30
+                      - component: f7-row
                         slots:
                           default:
-                            - component: oh-button
+                            - component: Label
                               config:
-                                action: command
-                                actionCommand: "=items[vars.soundSettings.items.treble].state < -9 ? -10 : Math.round(items[vars.soundSettings.items.treble].state) - 1"
-                                actionItem: =vars.soundSettings.items.treble
                                 style:
-                                  position: absolute
-                                  top: -50%
-                                  left: -50%
-                                  width: 200%
-                                  height: 200%
-                                  z-index: +2
-                      - component: oh-slider
-                        config:
-                          class: 
-                            - display-flex
-                            - margin-bottom
-                          style:
-                            width: calc(100% - 100px)
-                          min: -10
-                          max: +10
-                          step: 1
-                          scale: true
-                          scaleSteps: 4
-                          scaleSubSteps: 1
-                          item: =vars.soundSettings.items.treble
-                      - component: f7-icon
-                        config:
-                          class: 
-                            - margin-right
-                            - margin-bottom
-                          f7: 'plus_circle'
-                          size: 30
+                                  fontSize: 18px
+                                class:
+                                  - margin-left
+                                  - margin-top
+                                text: "=props.trebleCaption === undefined ? 'Treble' : props.trebleCaption"
+                            - component: Label
+                              config:
+                                style:
+                                  fontSize: 18px
+                                class:
+                                  - margin-right
+                                  - margin-top
+                                text: '=items[vars.soundSettings.items.treble].state'
+                      - component: f7-row                      
                         slots:
                           default:
-                            - component: oh-button
+                            - component: f7-icon
                               config:
-                                action: command
-                                actionCommand: "=items[vars.soundSettings.items.treble].state > 9 ? 10 : Math.round(items[vars.soundSettings.items.treble].state) + 1"
-                                actionItem: =vars.soundSettings.items.treble
+                                class: 
+                                  - margin-left
+                                  - margin-bottom
+                                f7: 'minus_circle'
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[vars.soundSettings.items.treble].state < -9 ? -10 : Math.round(items[vars.soundSettings.items.treble].state) - 1"
+                                      actionItem: =vars.soundSettings.items.treble
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        z-index: +2
+                            - component: oh-slider
+                              config:
+                                class: 
+                                  - display-flex
+                                  - margin-bottom
                                 style:
-                                  position: absolute
-                                  top: -50%
-                                  left: -50%
-                                  width: 200%
-                                  height: 200%
-                                  z-index: +2
-          - component: f7-card
-            slots:
-              default:
-                - component: f7-row
+                                  width: calc(100% - 100px)
+                                min: -10
+                                max: +10
+                                step: 1
+                                scale: true
+                                scaleSteps: 4
+                                scaleSubSteps: 1
+                                item: =vars.soundSettings.items.treble
+                            - component: f7-icon
+                              config:
+                                class: 
+                                  - margin-right
+                                  - margin-bottom
+                                f7: 'plus_circle'
+                                size: 30
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: command
+                                      actionCommand: "=items[vars.soundSettings.items.treble].state > 9 ? 10 : Math.round(items[vars.soundSettings.items.treble].state) + 1"
+                                      actionItem: =vars.soundSettings.items.treble
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        width: 200%
+                                        height: 200%
+                                        z-index: +2
+                - component: f7-card
                   slots:
                     default:
-                      - component: Label
-                        config:
-                          style:
-                            fontSize: 18px
-                          class:
-                            - margin-left
-                            - margin-vertical
-                          text: "=props.loudnessCaption === undefined ? 'Loudness' : props.loudnessCaption"
-                      - component: oh-toggle
-                        config:
-                          class:
-                            - margin-right
-                            - margin-vertical
-                          item: =vars.soundSettings.items.loudness              
+                      - component: f7-row
+                        slots:
+                          default:
+                            - component: Label
+                              config:
+                                style:
+                                  fontSize: 18px
+                                class:
+                                  - margin-left
+                                  - margin-vertical
+                                text: "=props.loudnessCaption === undefined ? 'Loudness' : props.loudnessCaption"
+                            - component: oh-toggle
+                              config:
+                                class:
+                                  - margin-right
+                                  - margin-vertical
+                                item: =vars.soundSettings.items.loudness              
 
     - component: f7-popover
       config:
@@ -425,6 +445,7 @@ slots:
         style:
           min-width: 350px
           max-width: 500px
+          background-color: var(--f7-page-bg-color)
       slots:
         default:
           - component: oh-repeater
@@ -439,17 +460,12 @@ slots:
             slots:
               default:
                 - component: f7-card
-                  config:
-                    class: '=(loop.zoneSpeaker.name.length > 1) ? "display-inherit" : "display-none"'
-                    style:
-                      height: 40px
                   slots:
                     default:
                       - component: f7-row
                         config:
                           class:
                             - display-flex
-                            - align-content-stretch
                             - align-items-center
                             - justify-content-space-around
                           style:
@@ -458,17 +474,23 @@ slots:
                           default:
                             - component: f7-icon
                               config:
-                                class: margin-horizontal
+                                class: 
+                                  - margin-left
+                                  - margin-vertical
                                 f7: '=(items[vars.zone.items.coordinator].state === items[loop.zoneSpeaker.items.coordinator].state) ? "checkmark_alt_circle_fill" : "circle"'
                                 size: 30
                             - component: Label
                               config:
+                                class: 
+                                  - margin-vertical
                                 style:
                                   fontSize: 18px
                                 text: =loop.zoneSpeaker.name
                             - component: f7-icon
                               config:
-                                class: margin-horizontal
+                                class: 
+                                  - margin-right
+                                  - margin-vertical
                                 f7: '=(items[loop.zoneSpeaker.items.player].state === "PLAY") ? "chart_bar_alt_fill" : ""'
                                 size: 30
                             - component: oh-button
@@ -481,7 +503,39 @@ slots:
                                   position: absolute
                                   top: 0px
                                   width: 100%
-                                             
+
+    - component: f7-popover
+      config:
+        class: popoverRadioStations
+        style:
+          min-width: 220px
+          max-width: 370px
+          background-color: var(--f7-page-bg-color)
+      slots:
+        default:
+          - component: oh-repeater
+            config:
+              for: radioStation
+              fragment: true
+              in: =JSON.parse(items['Sonos_Controller_UiRadioConfig'].state)
+              sourceType: array
+            slots:
+              default:
+                      - component: oh-image
+                        config:
+                          url: =loop.radioStation.coverUrl
+                          class:
+                            - margin-horizontal
+                            - margin vertical
+                          style:
+                            grid-area: 1 / 1 / 1 / 1
+                            transition: 1s ease-in-out
+                            width: 30%
+                            z-index: 2
+                          action: command
+                          actionCommand: =loop.radioStation.tuneInId
+                          actionItem: =loop.zone.items.tuneIn
+
     - component: oh-swiper
       config:
         navigation: "=props.preferredSpeaker === undefined ? true : false"
@@ -537,11 +591,36 @@ slots:
                                       style:
                                         position: absolute
                                         top: -50%
-                                        left: -50%
+                                        left: -20%
                                         height: 200%
-                                        width: 200%
+                                        width: 180%
                                         maxWidth: 350px
                                       popoverOpen: .popoverVolumeSettings
+                            - component: f7-icon
+                              config:
+                                class: margin-horizontal
+                                f7: music_note_list
+                                size: 30
+                                style:
+                                  position: absolute
+                                  top: 15px
+                                  right: 50px
+                              slots:
+                                default:
+                                  - component: oh-button
+                                    config:
+                                      action: variable
+                                      actionVariable: zone
+                                      actionVariableValue: =loop.zone
+                                      style:
+                                        position: absolute
+                                        top: -50%
+                                        left: -50%
+                                        height: 200%
+                                        width: 170%
+                                        maxWidth: 350px
+                                      popoverOpen: .popoverRadioStations     
+
                       - component: oh-masonry
                         config:
                           cols:

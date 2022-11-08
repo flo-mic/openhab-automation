@@ -4,12 +4,21 @@ load('/openhab/conf/automation/js/helpers/items.js');
 
 let logger = log('SonosController');
 
+const radiosConfig = {
+    youFM: { name: "youFM", tuneInId: "24878", coverUrl: "https://cdn-profiles.tunein.com/s24878/images/logod.png?t=637438103740000000" },
+    planet: { name: "planet", tuneInId: "2726", coverUrl: "https://cdn-profiles.tunein.com/s2726/images/logod.jpg?t=636656469348500000" },
+    hr3: { name: "hr3", tuneInId: "57109", coverUrl: "https://cdn-profiles.tunein.com/s57109/images/logod.png?t=636553103806930000" },
+    ffh: { name: "ffh", tuneInId: "17490", coverUrl: "https://cdn-profiles.tunein.com/s17490/images/logod.jpg?t=636656467547170000" },
+    swr3: { name: "swr3", tuneInId: "24896", coverUrl: "https://cdn-profiles.tunein.com/s24896/images/logod.png?t=636680257044500000" },
+}
+
 const config = {
     controllerGroupItem: "Sonos_Controller",
     controllerTags: ["Sonos Controller"],
     sonosIdentifierString: "RINCON_",
     sonosControllerItem: "Sonos_Controller_Command",
     sonosControllerUiConfig: "Sonos_Controller_UiConfig",
+    sonosControllerUiRadioConfig: "Sonos_Controller_UiRadioConfig"
 }
 
 const channelIds = {
@@ -126,6 +135,7 @@ class SonosController extends DeviceController {
         
         // Update ui config item
         this.updateUiConfig();
+        this.updateUiRadioConfig();
         logger.info("Sonos Controller is ready.");
     }
 
@@ -173,19 +183,19 @@ class SonosController extends DeviceController {
             this.getCoordinator(sonosClient.getTargetZone()).addDevice(this, sonosClient.getZone());
         }
         if(sonosClient.getCommand() === "remove") {
-            this.getCoordinator(sonosClient.getTargetZone()).removeDevice(sonosClient.getZone());
+            this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone());
         }
         if(sonosClient.getCommand() === ("pause" || "pause" || "stop")) {
-            this.getCoordinator(sonosClient.getTargetZone()).setControl(sonosClient.getCommand());
+            this.getCoordinator(sonosClient.getZone()).setControl(sonosClient.getCommand());
         }
         if(sonosClient.getCommand() === "playUri") {
-            this.getCoordinator(sonosClient.getTargetZone()).playUri(sonosClient.getUri());
+            this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
         }
         if(sonosClient.getCommand() === "addOrPlay") {
             if(this.getActiveZones().length > 0){
                 this.getCoordinator(this.getActiveZones()[0]).addDevice(this, sonosClient.getZone());
             } else {
-                this.getCoordinator(sonosClient.getTargetZone()).playUri(sonosClient.getUri());
+                this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
             }
         }
     }
@@ -220,6 +230,7 @@ class SonosController extends DeviceController {
                     mute: device.items["mute"].name,
                     zoneVolume: device.items["zoneVolume"].name,
                     zoneMute: device.items["zoneMute"].name,
+                    tuneIn: device.items["tuneIn"].name,
                     bass: device.items["bass"].name,
                     treble: device.items["treble"].name,
                     loudness: device.items["loudness"].name,
@@ -229,6 +240,14 @@ class SonosController extends DeviceController {
             });
         });
         uiConfigItem.postUpdate(JSON.stringify(uiConfiguration));
+    }
+
+    updateUiRadioConfig() {
+        var radios = new Array();
+        Object.keys(radiosConfig).forEach(key => {
+            radios.push(radiosConfig[key]);
+        });
+        uiRadioConfigItem.postUpdate(JSON.stringify(radios));
     }
 }
 
@@ -333,11 +352,13 @@ var controller = null;
 var controllerGroupItem = null;
 var controllerItem = null
 var uiConfigItem = null
+var uiRadioConfigItem = null
 
 scriptLoaded = function () {
     controllerGroupItem = addItem(config.controllerGroupItem, "Group", "Sonos Controller Group", undefined, config.controllerTags);
     controllerItem = addItem(config.sonosControllerItem, "String", "Sonos Controller Command Item", new Array(controllerGroupItem.name), config.controllerTags);
     uiConfigItem = addItem(config.sonosControllerUiConfig, "String", "Sonos Controller Ui Config Item", new Array(controllerGroupItem.name), config.controllerTags);
+    uiRadioConfigItem = addItem(config.sonosControllerUiRadioConfig, "String", "Sonos Controller Ui Radio Config Item", new Array(controllerGroupItem.name), config.controllerTags);
     loadedDate = Date.now();
     controller = new SonosController();
 }
