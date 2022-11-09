@@ -1,7 +1,5 @@
 load('/openhab/conf/automation/js/classes/sonos_client.js');
 
-const radioUrl = "http://streams.planetradio.de/planetradio/mp3/playerid:RTFFH/hqlivestream.mp3";
-
 rules.JSRule({
   name: "Wohnzimmer Automation",
   id: "Wohnzimmer_Allgemein",
@@ -10,7 +8,7 @@ rules.JSRule({
   triggers: triggers.ItemStateChangeTrigger("Praesenz_Wohnzimmer"),
   execute: event => {
       if(event.oldState === "OFF" && event.newState === "ON") {
-        new SonosClient("Wohnzimmer").setCommand("addOrPlay").setUri(radioUrl).send();
+        new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
       }
       else if(event.oldState === "ON" && event.newState === "OFF") {
         new SonosClient("Wohnzimmer").setCommand("remove").send();
@@ -26,7 +24,9 @@ rules.JSRule({
   triggers: triggers.ItemStateChangeTrigger("Praesenz_Schlafzimmer"),
   execute: event => {
       if(event.oldState === "OFF" && event.newState === "ON") {
-        new SonosClient("Schlafzimmer").setCommand("addOrPlay").setUri(radioUrl).send();
+        if(items.getItem("Sonos_Wohnzimmer_Fernbedienung").state === "PLAY") {
+          new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+        }
       }
       else if(event.oldState === "ON" && event.newState === "OFF") {
         new SonosClient("Schlafzimmer").setCommand("remove").send();
@@ -42,7 +42,7 @@ rules.JSRule({
   triggers: triggers.ItemStateChangeTrigger("Praesenz_Badezimmer"),
   execute: event => {
       if(event.oldState === "OFF" && event.newState === "ON") {
-        new SonosClient("Badezimmer").setCommand("addOrPlay").setUri(radioUrl).send();
+        new SonosClient("Badezimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
       }
       else if(event.oldState === "ON" && event.newState === "OFF") {
         new SonosClient("Badezimmer").setCommand("remove").send();

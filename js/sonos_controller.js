@@ -172,33 +172,37 @@ class SonosController extends DeviceController {
 
     loadClientConfig(string) {
         let conf = JSON.parse(string);
-        var client =  new SonosClient(conf.zone, conf.command, conf.targetZone, conf.uri)
+        var client =  new SonosClient(conf)
         client.setZone(this.getDeviceByZone(client.zone));
         client.setTargetZone(this.getDeviceByZone(client.targetZone));
         return client;
     }
 
     executeClientCommand(sonosClient) {
-        if(sonosClient.getCommand() === "add") {
-            this.getCoordinator(sonosClient.getTargetZone()).addDevice(this, sonosClient.getZone());
+        if(sonosClient.getAddIfPossible() === true && this.getActiveZones().length > 0) {
+            this.getCoordinator(this.getActiveZones()[0]).addDevice(this, sonosClient.getZone());
+            return; 
         }
-        if(sonosClient.getCommand() === "remove") {
-            this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone());
-        }
-        if(sonosClient.getCommand() === ("pause" || "pause" || "stop")) {
-            this.getCoordinator(sonosClient.getZone()).setControl(sonosClient.getCommand());
-        }
-        if(sonosClient.getCommand() === "playUri") {
-            this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
-        }
-        if(sonosClient.getCommand() === "addOrPlay") {
-            if(this.getActiveZones().length > 0){
-                this.getCoordinator(this.getActiveZones()[0]).addDevice(this, sonosClient.getZone());
-            } else {
+        switch(sonosClient.getCommand()) {
+            case "add":
+                this.getCoordinator(sonosClient.getTargetZone()).addDevice(this, sonosClient.getZone());
+                break;
+            case "remove":
+                this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone());
+                break;
+            case "play" && sonosClient.getUri() !== null:
                 this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
-            }
-        }
-    }
+                break;
+            case "play" && sonosClient.getTuneInRadio() !== null:
+                this.getCoordinator(sonosClient.getZone()).playTuneInRadio(sonosClient.getUri());
+                break;
+            case "play":
+            case "pause":
+                this.getCoordinator(sonosClient.getZone()).setControl(sonosClient.getCommand());
+                break;
+            default:
+        } 
+     }
 
     refreshZoneVolume(zone) {
         let zoneMembers = this.getZoneMembers(zone);
@@ -274,8 +278,65 @@ class SonosDevice extends Device{
     }
 
     playUri(uri) {
+        if(this.getControl() !== "PLAY") {
+            this.setDefaultVolume();
+        }
         logger.info("Playing Uri \"" + uri + "\" to device \"" + this.getLabel() + "\".");
         this.items["playUri"].sendCommand(uri);
+        return this;
+    }
+
+    playTuneInRadio(radio) {
+        if(this.getControl() !== "PLAY") {
+            this.setDefaultVolume();
+        }
+        if(isInteger(radio)) {
+            logger.info("Playing TuneIn Radio id \"" + radio + "\" to device \"" + this.getLabel() + "\".");
+            this.items["tuneIn"].sendCommand(radio); 
+        } else {
+            logger.info("Playing TuneIn Radio \"" + radiosConfig[radio].name + "\" to device \"" + this.getLabel() + "\".");
+            this.items["tuneIn"].sendCommand(radiosConfig[radio].tuneInId);
+        }
+        return this;
+    }
+
+    getItemControllerConfig(item) {
+        var conf = null;
+        this.items[item].tags.forEach(tag => {
+            if (tag.startsWith("Sonos Controller:")) {
+                try {
+                    conf = JSON.parse(tag.split(config.controllerTags + ":")[1]);
+                } catch (e) {
+                    logger.error("Error while reading Sonos Controller tag of item \"" + item + "\".");
+                    logger.error(e);
+                }
+            }
+        }); 
+        return conf;
+    }
+
+    setDefaultVolume() {
+        let currentTime = new Date();
+        let itemConfig = this.getItemControllerConfig("volume");
+        if( itemConfig !== null) {
+            var time = null;
+            var volume = null;
+            itemConfig.defaultVolume.forEach(config => {
+                if(config.time !== undefined && config.volume !== undefined) {
+                    var date = new Date(new Date(new Date().setHours(config.time.split(":")[0])).setMinutes(config.time.split(":")[1]));
+                    if(time === null && date.getTime() <= currentTime.getTime()) {
+                        time = date
+                        volume = config.volume
+                    } else {
+                        if(time.getTime() < date.getTime() && date.getTime() <= currentTime.getTime()) {
+                            time = date
+                            volume = config.volume
+                        }
+                    }
+                }
+            });
+            this.setVolume(volume);
+        }
         return this;
     }
 
@@ -284,6 +345,9 @@ class SonosDevice extends Device{
     }
 
     setControl(control) {
+        if(this.getControl() !== "PLAY") {
+            this.setDefaultVolume();
+        }
         this.items["player"].sendCommand(control.toUpperCase());
         return this;
     }
@@ -322,13 +386,15 @@ class SonosDevice extends Device{
     }
 
     setVolume(value) {
-        if(value < 0) {
-            value = 0;
+        if(value !== null && value !== undefined) {
+            if(value < 0) {
+                value = 0;
+            }
+            if(value > 100) {
+                value = 100;
+            }
+            this.items["volume"].sendCommand(value);
         }
-        if(value > 100) {
-            value = 100;
-        }
-        this.items["volume"].sendCommand(value);
         return this;
     }
 
