@@ -22,6 +22,8 @@ var disablePresence = function disablePresence() {
 // Presence detection Badezimmer
 rules.JSRule({
   name: "Präsenzerkennung Badezimmer",
+  id: "Praesenzerkennung_Badezimmer",
+  tags: ["Badezimmer", "Presence detection"],
   description: "Präsenzerkennung im Badezimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
     triggers.ItemStateUpdateTrigger('Bewegungsmelder_Badezimmer_Status', 'ON'),
@@ -47,15 +49,15 @@ rules.JSRule({
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, disablePresence, delaySeconds);
     }
-  },
-  tags: ["Badezimmer", "Presence"],
-  id: "Praesenzerkennung_Badezimmer"
+  }
 });
 
 
 // Presence detection Schlafzimmer
 rules.JSRule({
   name: "Präsenzerkennung Schlafzimmer",
+  id: "Praesenzerkennung_Schlafzimmer",
+  tags: ["Schlafzimmer", "Presence detection"],
   description: "Präsenzerkennung im Schlafzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
     triggers.ItemStateUpdateTrigger('Praesenz_Wohnzimmer', 'OFF'),
@@ -87,9 +89,7 @@ rules.JSRule({
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, disablePresence, delaySeconds);
     }
-  },
-  tags: ["Schlafzimmer", "Presence"],
-  id: "Praesenzerkennung_Schlafzimmer"
+  }
 });
 
 
@@ -97,13 +97,16 @@ rules.JSRule({
 // Presence detection Wohnzimmer
 rules.JSRule({
   name: "Präsenzerkennung Wohnzimmer",
+  id: "Praesenzerkennung_Wohnzimmer",
+  tags: ["Wohnzimmer", "Presence detection"],
   description: "Präsenzerkennung im Wohnzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
     triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'OFF'),
     triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'ON'),
     triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'OFF'),
     triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'ON'),
-    triggers.ItemStateUpdateTrigger('Tuer_Wohnzimmer_Status', 'OPEN')
+    triggers.ItemStateUpdateTrigger('Tuer_Wohnzimmer_Status', 'OPEN'),
+    triggers.ItemStateUpdateTrigger('Tuer_Wohnzimmer_Status', 'CLOSED')
   ],
   execute: (event) => {
     // Variables
@@ -119,11 +122,17 @@ rules.JSRule({
     resetMotion2 = items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status_Zuruecksetzen');
     doorSensor = items.getItem('Tuer_Wohnzimmer_Status');
 
+    console.log("Präsenz Wohnzimmer: " + presenceItem.state);
+    console.log("Bewegungsmelder Küche: " + motionSensor1.state);
+    console.log("Bewegungsmelder Wohnzimmer: " + motionSensor2.state);
+    console.log("Tür: " + doorSensor.state);
+    console.log("Trigger Item: " + event.itemName);
+
     // Check for presence on all endpoints
     if(motionSensor1.state === "ON" ||  motionSensor2.state === "ON" || doorSensor.state === "OPEN") {
       enablePresence();
     }
-    else if(presenceItem.state !== "OFF") {
+    else if(presenceItem.state !== "OFF" && event.itemName === door.name && door.state === "CLOSED") {
       // Reset presence state of motion detectors
       resetMotion1.sendCommand("ON");
       resetMotion2.sendCommand("ON");
@@ -134,7 +143,5 @@ rules.JSRule({
           }
         }, delaySeconds);
     }
-  },
-  tags: ["Wohnzimmer", "Presence"],
-  id: "Praesenzerkennung_Wohnzimmer"
+  }
 });
