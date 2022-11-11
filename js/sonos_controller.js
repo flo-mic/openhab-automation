@@ -188,7 +188,7 @@ class SonosController extends DeviceController {
                 this.getCoordinator(sonosClient.getTargetZone()).addDevice(this, sonosClient.getZone());
                 break;
             case "remove":
-                this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone());
+                this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone(), this.getZoneMembers(sonosClient.getZone()));
                 break;
             case "play" && sonosClient.getUri() !== null:
                 this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
@@ -243,6 +243,10 @@ class SonosController extends DeviceController {
                 }    
             });
         });
+        // Sorrt Speaker alphabetical and send to Ui item
+        uiConfiguration.sort(function(a, b){
+            return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
+        });        
         uiConfigItem.postUpdate(JSON.stringify(uiConfiguration));
     }
 
@@ -268,12 +272,15 @@ class SonosDevice extends Device{
         }
     }
 
-    removeDevice(device) {
-        logger.info("Removing \"" + device.getLabel() + "\" from device \"" + this.getLabel() + "\".");
+    removeDevice(device, zoneMembers) {
         if(device.getId() != this.getId()) {
+            logger.info("Removing \"" + device.getLabel() + "\" from device \"" + this.getLabel() + "\".");
             this.items["remove"].sendCommand(device.getId())
         } else {
-            this.items["standalone"].sendCommand("ON")
+            if(zoneMembers.length > 1) {
+                logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + zoneMembers.length -1 + "\".");
+                this.items["standalone"].sendCommand("ON")
+            }
         }
     }
 

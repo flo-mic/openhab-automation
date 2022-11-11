@@ -1,24 +1,5 @@
 load('/openhab/conf/automation/js/helpers/timer.js');
 
-// enable Presence in room
-function enablePresence() {
-  cancelTimer(timerId);
-  if(presenceItem.state !== "ON") {
-    console.log('Presence in ' + room + ' detected.');
-    presenceItem.postUpdate("ON");
-  }
-}
-
-// disable Presence in room
-var disablePresence = function disablePresence() {
-  cancelTimer(timerId);
-  if(presenceItem.state !== "OFF") {
-    console.log('No more presence in ' + room + '.');
-    presenceItem.postUpdate("OFF");
-  }
-}
-
-
 // Presence detection Badezimmer
 rules.JSRule({
   name: "Präsenzerkennung Badezimmer",
@@ -40,14 +21,24 @@ rules.JSRule({
     motionSensor = items.getItem('Bewegungsmelder_Badezimmer_Status')
 
     // if sensor detects motion
-    if(motionSensor.state === "ON") {
-      enablePresence();
+    if(motionSensor.state === "ON") {cancelTimer(timerId);
+      if(presenceItem.state !== "ON") {
+        console.log('Presence in ' + room + ' detected.');
+        presenceItem.postUpdate("ON");
+      }
+      return;
     }
       
     // if sensor detects no more motion and there is no timer running
     if(motionSensor.state === "OFF" && !(getActiveTimer(timerId))) {
       // Add timer to turn off the light in 30 seconds
-      addTimer(timerId, disablePresence, delaySeconds);
+      addTimer(timerId, function() {
+        cancelTimer(timerId);
+        if(presenceItem.state !== "OFF") {
+          console.log('No more presence in ' + room + '.');
+          presenceItem.postUpdate("OFF");
+        }
+      }, delaySeconds);
     }
   }
 });
@@ -78,16 +69,31 @@ rules.JSRule({
 
     // If motion in living room is not on, turn off sleeping room as well
     if (presenceWohnzimmer.state != "ON") {
-      disablePresence();
+      cancelTimer(timerId);
+      if(presenceItem.state !== "OFF") {
+        console.log('No more presence in ' + room + '.');
+        presenceItem.postUpdate("OFF");
+      }
+      return;
     }
     // if sensor detects motion
-    else if(motionSensor.state === "ON") {
-        enablePresence();
+    else if(motionSensor.state === "ON") {cancelTimer(timerId);
+      if(presenceItem.state !== "ON") {
+        console.log('Presence in ' + room + ' detected.');
+        presenceItem.postUpdate("ON");
+      }
+      return;
     }
     // if sensor detects no more motion and no timer is started
     else if(motionSensor.state === "OFF" && !(getActiveTimer(timerId))) {
       // Add timer to turn off the light in 30 seconds
-      addTimer(timerId, disablePresence, delaySeconds);
+      addTimer(timerId, function () {
+        cancelTimer(timerId);
+        if(presenceItem.state !== "OFF") {
+          console.log('No more presence in ' + room + '.');
+          presenceItem.postUpdate("OFF");
+        }
+      }, delaySeconds);
     }
   }
 });
@@ -126,20 +132,29 @@ rules.JSRule({
     console.log("Bewegungsmelder Küche: " + motionSensor1.state);
     console.log("Bewegungsmelder Wohnzimmer: " + motionSensor2.state);
     console.log("Tür: " + doorSensor.state);
+    console.log("Tür item name: " + doorSensor.state);
     console.log("Trigger Item: " + event.itemName);
 
     // Check for presence on all endpoints
-    if(motionSensor1.state === "ON" ||  motionSensor2.state === "ON" || doorSensor.state === "OPEN") {
-      enablePresence();
+    if(motionSensor1.state === "ON" ||  motionSensor2.state === "ON" || doorSensor.state === "OPEN") {cancelTimer(timerId);
+      if(presenceItem.state !== "ON") {
+        console.log('Presence in ' + room + ' detected.');
+        presenceItem.postUpdate("ON");
+      }
+      return;
     }
-    else if(presenceItem.state !== "OFF" && event.itemName === door.name && door.state === "CLOSED") {
+    else if(presenceItem.state !== "OFF" && event.itemName === doorSensor.name && doorSensor.state === "CLOSED") {
       // Reset presence state of motion detectors
       resetMotion1.sendCommand("ON");
       resetMotion2.sendCommand("ON");
       // Add timer to turn of the light in 30 seconds
       addTimer(timerId, function (){
           if(motionSensor1.state != "ON" &&  motionSensor2.state != "ON" && doorSensor.state != "OPEN") {
-            disablePresence;
+            cancelTimer(timerId);
+            if(presenceItem.state !== "OFF") {
+              console.log('No more presence in ' + room + '.');
+              presenceItem.postUpdate("OFF");
+            }
           }
         }, delaySeconds);
     }
