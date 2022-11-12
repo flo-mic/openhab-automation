@@ -7,8 +7,8 @@ rules.JSRule({
   tags: ["Badezimmer", "Presence detection"],
   description: "Präsenzerkennung im Badezimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Badezimmer_Status', 'ON'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Badezimmer_Status', 'OFF')
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', 'OFF')
   ],
   execute: (event) => {
     // Variables
@@ -51,10 +51,10 @@ rules.JSRule({
   tags: ["Schlafzimmer", "Presence detection"],
   description: "Präsenzerkennung im Schlafzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateUpdateTrigger('Praesenz_Wohnzimmer', 'OFF'),
-    triggers.ItemStateUpdateTrigger('Praesenz_Wohnzimmer', 'ON'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Schlafzimmer_Status', 'OFF'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Schlafzimmer_Status', 'ON')
+    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', 'OFF'),
+    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', 'ON')
   ],
   execute: (event) => {
     // Variables
@@ -107,12 +107,12 @@ rules.JSRule({
   tags: ["Wohnzimmer", "Presence detection"],
   description: "Präsenzerkennung im Wohnzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'OFF'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'ON'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'OFF'),
-    triggers.ItemStateUpdateTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'ON'),
-    triggers.ItemStateUpdateTrigger('Tuer_Wohnzimmer_Status', 'OPEN'),
-    triggers.ItemStateUpdateTrigger('Tuer_Wohnzimmer_Status', 'CLOSED')
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'ON'),
+    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', 'OPEN'),
+    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', 'CLOSED')
   ],
   execute: (event) => {
     // Variables

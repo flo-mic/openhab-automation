@@ -37,10 +37,9 @@ class DeviceController {
   }
 
   uninitialize() {
+    logger.info("Controller \"" + this.label + "\" will be uninitialized.");
     this.devices.forEach(device => {
-      device.dynamic_items.forEach(item => {
-        this.removeChannelItemLink(item);
-      });
+      device.uninitialize();
       delete this.devices[device]
     })
   }
@@ -60,8 +59,9 @@ class Device {
   };
 
   uninitialize() {
+    logger.info("Device \""+this.label+"\" will be uninitialized.");
     this.dynamic_items.forEach(item => {
-      this.removeChannelItemLink(item);
+      this.removeDynamicItem(item);
     })
     this.dynamic_items = new Array();
   }

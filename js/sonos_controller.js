@@ -88,6 +88,7 @@ class SonosController extends DeviceController {
             description: "Manages zoneVolume commands",
             triggers: volumeTriggeringItems,
             execute: event => {
+                console.log("Volume control rule startet")
                 let zoneMembers = this.getZoneMembers(this.getDeviceByItem(event.itemName));
                 if(event.receivedCommand) {
                     let item = items.getItem(event.itemName);
@@ -115,6 +116,7 @@ class SonosController extends DeviceController {
             description: "Manages zoneMute commands",
             triggers: muteTriggeringItems,
             execute: event => {
+                console.log("Volume mute control rule startet")
                 let zone = this.getDeviceByItem(event.itemName);
                 if(event.receivedCommand) {
                     let zoneMembers = this.getZoneMembers(zone);
@@ -266,9 +268,9 @@ class SonosDevice extends Device{
     };
 
     addDevice(controller, device) {
-        logger.info("Adding \"" + device.getLabel() + "\" to device \"" + this.getLabel() + "\".");
         if(device.getId() != this.getId() && this.getId() != controller.getCoordinator(device).getId()) {
-           this.items["add"].sendCommand(device.getId())
+            logger.info("Adding \"" + device.getLabel() + "\" to device \"" + this.getLabel() + "\".");
+            this.items["add"].sendCommand(device.getId())
         }
     }
 
@@ -437,5 +439,7 @@ scriptLoaded = function () {
 }
 
 scriptUnloaded = function () {
+    controller.uninitialize();
     logger.info("Sonos coordinator uninialized.");
 }
+
