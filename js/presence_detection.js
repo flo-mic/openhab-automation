@@ -27,7 +27,6 @@ rules.JSRule({
         console.log('Presence in ' + room + ' detected.');
         presenceItem.postUpdate("ON");
       }
-      return;
     }
       
     // if sensor detects no more motion and there is no timer running
@@ -75,7 +74,6 @@ rules.JSRule({
         console.log('No more presence in ' + room + '.');
         presenceItem.postUpdate("OFF");
       }
-      return;
     }
     // if sensor detects motion
     else if(motionSensor.state === "ON") {
@@ -84,7 +82,6 @@ rules.JSRule({
         console.log('Presence in ' + room + ' detected.');
         presenceItem.postUpdate("ON");
       }
-      return;
     }
     // if sensor detects no more motion and no timer is started
     else if(motionSensor.state === "OFF" && !(getActiveTimer(timerId))) {
@@ -137,26 +134,26 @@ rules.JSRule({
     console.log("Tür item name: " + doorSensor.state);
     console.log("Trigger Item: " + event.itemName);
 
-    // Check for presence on all endpoints
-    if(motionSensor1.state === "ON" ||  motionSensor2.state === "ON" || doorSensor.state === "OPEN") {cancelTimer(timerId);
-      if(presenceItem.state !== "ON") {
-        console.log('Presence in ' + room + ' detected.');
-        presenceItem.postUpdate("ON");
-      }
-      return;
+    // Check if presence was detected on a sensor
+    if(((event.itemName === motionSensor1.name || event.itemName === motionSensor1.name ) && event.newState === "ON") 
+      || event.itemName === doorSensor.name && event.state === "OPEN") {
+        cancelTimer(timerId);
+        if(presenceItem.state !== "ON") {
+          console.log('Presence in ' + room + ' detected.');
+          presenceItem.postUpdate("ON");
+        }
     }
-    else if(presenceItem.state !== "OFF" && event.itemName === doorSensor.name && doorSensor.state === "CLOSED") {
+    // Check if door was closed to check again for active presence
+    else if(event.itemName === doorSensor.name && doorSensor.state === "CLOSED") {
       // Reset presence state of motion detectors
       resetMotion1.sendCommand("ON");
       resetMotion2.sendCommand("ON");
       // Add timer to turn of the light in 30 seconds
       addTimer(timerId, function (){
-        if(motionSensor1.state != "ON" &&  motionSensor2.state != "ON" && doorSensor.state != "OPEN") {
-          cancelTimer(timerId);
-          if(presenceItem.state !== "OFF") {
-            console.log('No more presence in ' + room + '.');
-            presenceItem.postUpdate("OFF");
-          }
+        cancelTimer(timerId);
+        if(presenceItem.state !== "OFF") {
+          console.log('No more presence in ' + room + '.');
+          presenceItem.postUpdate("OFF");
         }
       }, delaySeconds);
     }
