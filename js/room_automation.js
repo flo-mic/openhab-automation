@@ -1,91 +1,65 @@
 load('/openhab/conf/automation/js/classes/sonos_client.js');
+load('/openhab/conf/automation/js/helpers/rules.js');
 
-const item = {
-  avReceiver: "Marantz_AVR_Wohnzimmer_Power",
-  boseSubwoofer: "Marantz_AVR_Wohnzimmer_Subwoofer",
-  tv: "TV_Wohnzimmer_Power",
-  sonos: {
-    wohnzimmer: "Sonos_Wohnzimmer_Fernbedienung"
-  },
-  presence: {
-    wohnzimmer: "Praesenz_Wohnzimmer",
-    schlafzimmer: "Praesenz_Schlafzimmer",
-    badezimmer: "Praesenz_Badezimmer",
-  }
-}
-
-rules.JSRule({
-  name: "Wohnzimmer präsenz automation",
-  id: "Wohnzimmer_Praesenz_Allgemein",
-  tags: ["Wohnzimmer", "Presence", "Music", "Light"],
-  description: "Executes controller commands for given zone",
-  triggers: [
-    triggers.ItemStateChangeTrigger(item.presence.wohnzimmer),
-    triggers.ItemStateChangeTrigger(item.avReceiver)
-  ],
-  execute: event => {
-    // Control the bose subwoofer  
-    if(event.itemName === item.avReceiver && items.getItem(item.boseSubwoofer).state !== event.newState) {
-      items.getItem(item.avReceiverPower).sendCommand(event.newState);
-      return;
+const itemEvents = [
+  { 
+    itemName: "Praesenz_Wohnzimmer",
+    newState: "ON", 
+    oldState: "OFF", 
+    execute: function () {
+      new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
     }
-    // If Presence is detected
-    if(event.itemName === item.presence.wohnzimmer && event.oldState === "OFF" && event.newState === "ON") {
-      // Play music if tv is not turned on
-      if(items.getItem(item.tv).state !== "ON") {
-        new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
-      }
-    }
-    // if no presence is detected
-    else if(event.itemName === item.presence.wohnzimmer && event.oldState === "ON" && event.newState === "OFF") {
-      // Stop music
+  },{ 
+    itemName: "Praesenz_Wohnzimmer",
+    newState: "OFF", 
+    oldState: "ON",  
+    execute: function () {
       new SonosClient("Wohnzimmer").setCommand("remove").send();
     }
-  }
-});
-
-rules.JSRule({
-  name: "Schlafzimmer präsenz automation",
-  id: "Schlafzimmer_Praesenz_Allgemein",
-  tags: ["Schlafzimmer", "Presence", "Music", "Light"],
-  description: "Executes controller commands for given zone",
-  triggers: [
-    triggers.ItemStateChangeTrigger(item.presence.schlafzimmer),
-  ],
-  execute: event => {
-    // If Presence is detected
-    if(event.itemName === item.presence.schlafzimmer && event.oldState === "OFF" && event.newState === "ON") {
-      // Play music if music is active in Living room
-      if(items.getItem(item.sonos.wohnzimmer).state === "PLAY") {
+  },{ 
+    itemName: "Praesenz_Schlafzimmer",
+    newState: "ON", 
+    oldState: "OFF", 
+    execute: function () {
+      if(items.getItem("Sonos_Wohnzimmer_Fernbedienung").state === "PLAY") {
         new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
       }
     }
-    // if no presence is detected
-    else if(event.itemName === item.presence.schlafzimmer && event.oldState === "ON" && event.newState === "OFF") {
-      // Stop music
+  },{ 
+    itemName: "Praesenz_Schlafzimmer",
+    newState: "OFF", 
+    oldState: "ON",  
+    execute: function () {
       new SonosClient("Schlafzimmer").setCommand("remove").send();
     }
-  }
-});
-
-rules.JSRule({
-  name: "Badezimmer präsenz automation",
-  id: "Badezimmer_Praesenz_Allgemein",
-  tags: ["Badezimmer", "Presence", "Music"],
-  description: "Executes controller commands for given zone",
-  triggers: [
-    triggers.ItemStateChangeTrigger(item.presence.badezimmer),
-  ],
-  execute: event => {
-    // If Presence is detected
-    if(event.itemName === item.presence.badezimmer && event.oldState === "OFF" && event.newState === "ON") {
-      // Play music
+  },{ 
+    itemName: "Praesenz_Badezimmer",
+    newState: "ON", 
+    oldState: "OFF", 
+    execute: function () {
       new SonosClient("Badezimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
     }
-    // if no presence is detected
-    else if(event.itemName === item.presence.badezimmer && event.oldState === "ON" && event.newState === "OFF") {
-      // Stop music
+  },{ 
+    itemName: "Praesenz_Badezimmer",
+    newState: "OFF", 
+    oldState: "ON",  
+    execute: function () {
       new SonosClient("Badezimmer").setCommand("remove").send();
+    }
+  }
+]
+
+
+rules.JSRule({
+  name: "Room Control based on Presence",
+  id: "Room_Control",
+  tags: ["Music", "Sonos"],
+  description: "Manage the music in a room based on the presence",
+  triggers: getRuleTrigger(itemEvents),
+  execute: event => {
+    let command = getObjectForEvent(itemEvents, event);
+    if(command) {
+      command.execute();
     }
   }
 });

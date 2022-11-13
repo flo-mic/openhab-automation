@@ -4,11 +4,11 @@ load('/openhab/conf/automation/js/helpers/timer.js');
 rules.JSRule({
   name: "Präsenzerkennung Badezimmer",
   id: "Praesenzerkennung_Badezimmer",
-  tags: ["Badezimmer", "Presence detection"],
+  tags: ["Bathroom", "Presence detection"],
   description: "Präsenzerkennung im Badezimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', 'ON'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', 'OFF')
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', null, 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Badezimmer_Status', null, 'OFF')
   ],
   execute: (event) => {
     // Variables
@@ -21,7 +21,8 @@ rules.JSRule({
     motionSensor = items.getItem('Bewegungsmelder_Badezimmer_Status')
 
     // if sensor detects motion
-    if(motionSensor.state === "ON") {cancelTimer(timerId);
+    if(motionSensor.state === "ON") {
+      cancelTimer(timerId);
       if(presenceItem.state !== "ON") {
         console.log('Presence in ' + room + ' detected.');
         presenceItem.postUpdate("ON");
@@ -48,13 +49,13 @@ rules.JSRule({
 rules.JSRule({
   name: "Präsenzerkennung Schlafzimmer",
   id: "Praesenzerkennung_Schlafzimmer",
-  tags: ["Schlafzimmer", "Presence detection"],
+  tags: ["Bedroom", "Presence detection"],
   description: "Präsenzerkennung im Schlafzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', 'OFF'),
-    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', 'ON'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', 'OFF'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', 'ON')
+    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', null, 'OFF'),
+    triggers.ItemStateChangeTrigger('Praesenz_Wohnzimmer', null, 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', null, 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Schlafzimmer_Status', null, 'ON')
   ],
   execute: (event) => {
     // Variables
@@ -77,7 +78,8 @@ rules.JSRule({
       return;
     }
     // if sensor detects motion
-    else if(motionSensor.state === "ON") {cancelTimer(timerId);
+    else if(motionSensor.state === "ON") {
+      cancelTimer(timerId);
       if(presenceItem.state !== "ON") {
         console.log('Presence in ' + room + ' detected.');
         presenceItem.postUpdate("ON");
@@ -104,15 +106,15 @@ rules.JSRule({
 rules.JSRule({
   name: "Präsenzerkennung Wohnzimmer",
   id: "Praesenzerkennung_Wohnzimmer",
-  tags: ["Wohnzimmer", "Presence detection"],
+  tags: ["LivingRoom", "Presence detection"],
   description: "Präsenzerkennung im Wohnzimmer mithilfe von Bewegungsmeldern und Sensoren",
   triggers: [
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'OFF'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', 'ON'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'OFF'),
-    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', 'ON'),
-    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', 'OPEN'),
-    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', 'CLOSED')
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', null, 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Kueche_Status', null, 'ON'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', null, 'OFF'),
+    triggers.ItemStateChangeTrigger('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status', null, 'ON'),
+    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', null, 'OPEN'),
+    triggers.ItemStateChangeTrigger('Tuer_Wohnzimmer_Status', null, 'CLOSED')
   ],
   execute: (event) => {
     // Variables
@@ -149,14 +151,14 @@ rules.JSRule({
       resetMotion2.sendCommand("ON");
       // Add timer to turn of the light in 30 seconds
       addTimer(timerId, function (){
-          if(motionSensor1.state != "ON" &&  motionSensor2.state != "ON" && doorSensor.state != "OPEN") {
-            cancelTimer(timerId);
-            if(presenceItem.state !== "OFF") {
-              console.log('No more presence in ' + room + '.');
-              presenceItem.postUpdate("OFF");
-            }
+        if(motionSensor1.state != "ON" &&  motionSensor2.state != "ON" && doorSensor.state != "OPEN") {
+          cancelTimer(timerId);
+          if(presenceItem.state !== "OFF") {
+            console.log('No more presence in ' + room + '.');
+            presenceItem.postUpdate("OFF");
           }
-        }, delaySeconds);
+        }
+      }, delaySeconds);
     }
   }
 });

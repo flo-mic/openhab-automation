@@ -57,84 +57,36 @@ class SonosController extends DeviceController {
         this.devices = this.loadDevices().map(device => new SonosDevice(device));
 
         // Identify item trigger event for rules
-        var volumeTriggeringItems = new Array();
-        var muteTriggeringItems = new Array();
+        var ruleTriggeringItems = new Array();
+        ruleTriggeringItems.push(triggers.ItemCommandTrigger(config.sonosControllerItem))
         this.devices.forEach(device => {
-            volumeTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["volume"].name));
-            volumeTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneVolume"].name));
-            muteTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["mute"].name));
-            muteTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneMute"].name));
+            ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["volume"].name));
+            ruleTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneVolume"].name));
+            ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["mute"].name));
+            ruleTriggeringItems.push(triggers.ItemCommandTrigger(device.items["zoneMute"].name));
         });
 
         // Add controller rule
         rules.JSRule({
-            name: "Sonos Controller: Command Item",
-            id: "SonosController_Command",
+            name: "Sonos Controller Control",
+            id: "SonosController_Control",
             tags: config.controllerTags,
             description: "Executes controller commands for given zone",
-            triggers: triggers.ItemCommandTrigger(config.sonosControllerItem),
+            triggers: ruleTriggeringItems,
             execute: event => {
-                logger.info("Sonos Controller command detected!");
-                var sonosClient = this.loadClientConfig(event.receivedCommand);
-                this.executeClientCommand(sonosClient);
-            }
-        });
-
-        // Add volume rule
-        rules.JSRule({
-            name: "Sonos Controller: Volume Control",
-            id: "SonosController_VolumeControl",
-            tags: config.controllerTags,
-            description: "Manages zoneVolume commands",
-            triggers: volumeTriggeringItems,
-            execute: event => {
-                console.log("Volume control rule startet")
-                let zoneMembers = this.getZoneMembers(this.getDeviceByItem(event.itemName));
-                if(event.receivedCommand) {
-                    let item = items.getItem(event.itemName);
-                    let volumeDifference = event.receivedCommand - item.history.previousState(true);
-                    zoneMembers.forEach(device => device.setVolume(device.getVolume() + volumeDifference));
-                } else {
-                    var volume = 0;
-                    zoneMembers.forEach(device => {
-                        volume += device.getVolume();
-                    })
-                    volume = volume / zoneMembers.length
-                    zoneMembers.forEach(device => {
-                        device.setZoneVolume(parseInt(volume));
-                    })
+                if(event.itemName === config.sonosControllerItem) {
+                    var sonosClient = this.loadClientConfig(event.receivedCommand);
+                    this.executeClientCommand(sonosClient);
                 }
-
-            }
-        });
-
-        // Add volume on mute rule
-        rules.JSRule({
-            name: "Sonos Controller: Volume Mute Control",
-            id: "SonosController_VolumeMuteControl",
-            tags: config.controllerTags,
-            description: "Manages zoneMute commands",
-            triggers: muteTriggeringItems,
-            execute: event => {
-                console.log("Volume mute control rule startet")
-                let zone = this.getDeviceByItem(event.itemName);
-                if(event.receivedCommand) {
-                    let zoneMembers = this.getZoneMembers(zone);
-                    zoneMembers.forEach(device => {
-                        device.setMute(event.receivedCommand)
-                        device.setZoneMute(event.receivedCommand)
-                    });
-                } else {
-                    if(event.newState === "ON") {
-                        zone.items["volume"].postUpdate(0);
-                    } else {
-                        zone.items["volume"].postUpdate(zone.items["volume"].history.previousState(true));
-                    }
-                    this.refreshZoneVolume(zone);
+                else if(items.getItem(event.itemName).type === "SwitchItem") {
+                    this.controlZoneMute(event);
+                }
+                else if(items.getItem(event.itemName).type === "DimmerItem") {
+                    this.controlZoneVolume(event);
                 }
             }
         });
-        
+
         // Update ui config item
         this.updateUiConfig();
         this.updateUiRadioConfig();
@@ -181,6 +133,7 @@ class SonosController extends DeviceController {
     }
 
     executeClientCommand(sonosClient) {
+        logger.info("Sonos Controller command detected!");
         if(sonosClient.getAddIfPossible() === true && this.getActiveZones().length > 0) {
             this.getCoordinator(this.getActiveZones()[0]).addDevice(this, sonosClient.getZone());
             return; 
@@ -205,6 +158,44 @@ class SonosController extends DeviceController {
             default:
         } 
      }
+
+    controlZoneVolume(event) {
+        logger.info("Updating Volume setting from Zone Members")
+        let zoneMembers = this.getZoneMembers(this.getDeviceByItem(event.itemName));
+        if(event.receivedCommand) {
+            let item = items.getItem(event.itemName);
+            let volumeDifference = event.receivedCommand - item.history.previousState(true);
+            zoneMembers.forEach(device => device.setVolume(device.getVolume() + volumeDifference));
+        } else {
+            var volume = 0;
+            zoneMembers.forEach(device => {
+                volume += device.getVolume();
+            })
+            volume = volume / zoneMembers.length
+            zoneMembers.forEach(device => {
+                device.setZoneVolume(parseInt(volume));
+            })
+        }
+    }
+
+    controlZoneMute(event) {
+        logger.info("Updating Mute setting from Zone Members")
+        let zone = this.getDeviceByItem(event.itemName);
+        if(event.receivedCommand) {
+            let zoneMembers = this.getZoneMembers(zone);
+            zoneMembers.forEach(device => {
+                device.setMute(event.receivedCommand)
+                device.setZoneMute(event.receivedCommand)
+            });
+        } else {
+            if(event.newState === "ON") {
+                zone.items["volume"].postUpdate(0);
+            } else {
+                zone.items["volume"].postUpdate(zone.items["volume"].history.previousState(true));
+            }
+            this.refreshZoneVolume(zone);
+        }
+    }
 
     refreshZoneVolume(zone) {
         let zoneMembers = this.getZoneMembers(zone);

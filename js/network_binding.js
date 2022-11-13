@@ -50,10 +50,10 @@ function getRuleTrigger() {
 
 // Add Network binding rule
 rules.JSRule({
-  name: "PC Wake on Lan",
-  id: "PC_WakeOnLan",
-  tags: ["PC", "Network Binding"],
-  description: "Monitors Computer Network Status and performs WoL and Shutdown commands",
+  name: "Network Binding Control",
+  id: "Network_Binding_Control",
+  tags: ["Network Binding", "PC", "TV"],
+  description: "Monitors Network devices and performs Wake-On-Lan and Shutdown commands",
   triggers: getRuleTrigger(),
   execute: event => {
     let device = getNetworkDevice(event.itemName);
@@ -76,7 +76,7 @@ rules.JSRule({
     } 
     // If online status from device changes update up item as well
     else {
-      if(event.newState || items.getItem(device.items.power).state) {
+      if(event.newState !== items.getItem(device.items.power).state) {
         items.getItem(device.items.power).postUpdate(event.newState);
       }
     }

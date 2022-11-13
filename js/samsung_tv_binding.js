@@ -1,4 +1,6 @@
-const commands = [
+load('/openhab/conf/automation/js/helpers/rules.js');
+
+const itemEvents = [
   { itemName: "TV_Wohnzimmer_Power",          receivedCommand: "ON",          keyCommand: "PowerOn"        },
   { itemName: "TV_Wohnzimmer_Power",          receivedCommand: "OFF",         keyCommand: "PowerOff"       },
   { itemName: "TV_Wohnzimmer_Stummschalten",  receivedCommand: "ON",          keyCommand: "Mute"           },
@@ -36,43 +38,25 @@ const commands = [
   { itemName: "TV_Wohnzimmer_Navigation",     receivedCommand: "Exit",        keyCommand: "Exit"           },
 ]
 
-function getRuleTrigger() {
-  // Load event trigger for rule dynamically during start
-  var ruleTriggeringEvents = new Array();
-  commands.forEach(command => {
-    if(command.receivedCommand !== null) {
-      ruleTriggeringEvents.push(triggers.ItemCommandTrigger(command.itemName, command.receivedCommand));
-    }
-    else {
-      ruleTriggeringEvents.push(triggers.ItemStateChangeTrigger(command.itemName, command.newState));
-    }
-  })
-  return ruleTriggeringEvents;
-}
-
 // Add Network binding rule
 rules.JSRule({
   name: "Samsung TV rule",
   id: "Samsung_TV_Automation",
-  tags: ["TV", "livingroom"],
-  description: "Handles commands to Samsung TV and updates state items",
-  triggers: getRuleTrigger(),
+  tags: ["TV", "LivingRoom"],
+  description: "Handles itemEvents to Samsung TV and updates state items",
+  triggers: getRuleTrigger(itemEvents),
   execute: event => {
-    // If command was detected
-    if(event.receivedCommand) {
-      commands.forEach(command => {
-        if(event.itemName === command.itemName && event.receivedCommand === command.receivedCommand) {
-          if(typeof command.keyCommand === "string") {
-            items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand(command.keyCommand);
-          }
-          else {
-            command.keyCommand.forEach(key => {
-              items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand(key);
-            });
-            items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand("Select");
-          }
-        }
-      })
-    } 
+    let command = getObjectForEvent(itemEvents, event);
+    if(command) {
+      if(typeof command.keyCommand === "string") {
+        items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand(command.keyCommand);
+      }
+      else {
+        command.keyCommand.forEach(key => {
+          items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand(key);
+        });
+        items.getItem("TV_Wohnzimmer_Tastendruck").sendCommand("Select");
+      }
+    }
   }
 });
