@@ -30,7 +30,7 @@ rules.JSRule({
     }
       
     // if sensor detects no more motion and there is no timer running
-    if(motionSensor.state === "OFF" && !(getActiveTimer(timerId))) {
+    if(motionSensor.state === "OFF" && !(getActiveTimerId(timerId))) {
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, function() {
         cancelTimer(timerId);
@@ -84,7 +84,7 @@ rules.JSRule({
       }
     }
     // if sensor detects no more motion and no timer is started
-    else if(motionSensor.state === "OFF" && !(getActiveTimer(timerId))) {
+    else if(motionSensor.state === "OFF" && !(getActiveTimerId(timerId))) {
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, function () {
         cancelTimer(timerId);
@@ -144,7 +144,7 @@ rules.JSRule({
         }
     }
     // Check if door was closed to check again for active presence
-    else if(event.itemName === doorSensor.name && doorSensor.state === "CLOSED") {
+    else if(event.itemName === doorSensor.name && doorSensor.state === "CLOSED" && !(getActiveTimerId(timerId))) {
       // Reset presence state of motion detectors
       resetMotion1.sendCommand("ON");
       resetMotion2.sendCommand("ON");

@@ -7,7 +7,9 @@ const itemEvents = [
     newState: "ON", 
     oldState: "OFF", 
     execute: function () {
-      new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+      if(items.getItem("TV_Wohnzimmer_Power").state !== "ON") {
+        new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+      }
     }
   },{ 
     itemName: "Praesenz_Wohnzimmer",

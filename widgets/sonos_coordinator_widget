@@ -48,7 +48,7 @@ props:
       required: false
       type: TEXT
   parameterGroups: []
-timestamp: Nov 9, 2022, 7:00:23 AM
+timestamp: Nov 14, 2022, 2:16:24 PM
 component: f7-card
 config: {}
 slots:
@@ -217,7 +217,7 @@ slots:
                           class:
                             - display-flex
                             - margin-right
-                          item: =vars.zone.items.zoneVolume
+                          item: "=(vars.zone ? vars.zone.items.zoneVolume : 'Item_Undefined')"
                           max: 100
                           min: 0
                           style:
@@ -304,7 +304,7 @@ slots:
                                 class:
                                   - display-flex
                                   - margin-bottom
-                                item: =vars.soundSettings.items.bass
+                                item: "=(vars.soundSettings ? vars.soundSettings.items.bass : 'Item_Undefined')"
                                 max: 10
                                 min: -10
                                 scale: true
@@ -385,7 +385,7 @@ slots:
                                 class:
                                   - display-flex
                                   - margin-bottom
-                                item: =vars.soundSettings.items.treble
+                                item: "=(vars.soundSettings ? vars.soundSettings.items.treble : 'Item_Undefined')"
                                 max: 10
                                 min: -10
                                 scale: true
@@ -434,7 +434,7 @@ slots:
                                 class:
                                   - margin-right
                                   - margin-vertical
-                                item: =vars.soundSettings.items.loudness
+                                item: "=(vars.soundSettings ? vars.soundSettings.items.loudness : 'Item_Undefined')"
     - component: f7-popover
       config:
         class: popoverZones
@@ -563,7 +563,7 @@ slots:
                                   fontSize: 22px
                                   max-height: 30px
                                   padding-bottom: 40px
-                                  text-align: center
+                                  text-align: "=screen.width < 400 ? '' : 'center'"
                                   width: 100%
                                 text: =loop.zone.name
                             - component: f7-icon
@@ -627,33 +627,39 @@ slots:
                                 default:
                                   - component: f7-card
                                     config:
+                                      class: "=screen.width < 400 ? 'display-flex' : ''"
                                       content: "=items[loop.zone.items.artist].state.length > 1 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-').length < 2 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-')[2].trim().split('/')"
                                       noShadow: true
                                       style:
                                         font-size: +140%
                                         margin-bottom: -10px
-                                        margin-top: -0%
-                                        min-height: 80.5px
+                                        margin-top: "=screen.width < 400 ? '-10px' : '0px'"
+                                        min-height: "=screen.width < 400 ? '50px' : '80.5px'"
                                         text-align: left
                                       title: "=props.titleCaption === undefined ? 'Title' : props.titleCaption"
+
                                   - component: f7-card
                                     config:
+                                      class: "=screen.width < 400 ? 'display-flex' : ''"
                                       content: "=items[loop.zone.items.artist].state.length > 1 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-').length < 2 ? items[loop.zone.items.title].state : items[loop.zone.items.track].state.split('-')[1].trim().split('/')"
                                       noShadow: true
                                       style:
                                         font-size: +140%
                                         margin-bottom: -10px
-                                        min-height: 80.5px
+                                        margin-top: "=screen.width < 400 ? '-10px' : '0px'"
+                                        min-height: "=screen.width < 400 ? '50px' : '80.5px'"
                                         text-align: left
                                       title: "=props.artistCaption === undefined ? 'Artist' : props.artistCaption"
                                   - component: f7-card
                                     config:
-                                      content: =items[loop.zone.items.album].state
+                                      class: "=screen.width < 400 ? 'display-flex' : ''"
+                                      content: "=items[loop.zone.items.album].state !== 'UNDEF' && items[loop.zone.items.album].state !== '' ? items[loop.zone.items.album].state : '-'"
                                       noShadow: true
                                       style:
                                         font-size: +140%
                                         margin-bottom: -10px
-                                        min-height: 80.5px
+                                        margin-top: "=screen.width < 400 ? '-10px' : '0px'"
+                                        min-height: "=screen.width < 400 ? '50px' : '80.5px'"
                                         text-align: left
                                       title: "=props.albumCaption === undefined ? 'Album' : props.albumCaption"
                             - component: f7-block

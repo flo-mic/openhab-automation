@@ -2,8 +2,8 @@
 // The libary supports the following methods
 // - addTimer
 // - cancelTimer
-// - getTimer
-// - getActiveTimer
+// - getTimerId
+// - getActiveTimerId
 // - setTimer
 
 
@@ -19,17 +19,17 @@ function addTimer(timerId, myfunction, seconds){
 
 
 // Get a timer object
-function getTimer(timerId) {
+function getTimerId(timerId) {
   // Get timer object from cache
   return cache.get(timerId);
 }
 
 
 // Get active timer if exists or return null value
-function getActiveTimer(timerId) {
-  var timer = getTimer(timerId);
+function getActiveTimerId(timerId) {
+  var timer = getTimerId(timerId);
   // Check if timer exists and is active
-  if(timer && timer.isActive()) {
+  if(timer) {
     return timer;
   }
   return null;
@@ -39,7 +39,7 @@ function getActiveTimer(timerId) {
 // Set a timer, existing timers will be canceled and new timers started
 function setTimer(timerId, myfunction, seconds){
   // Cancel existing timer if exists
-  if (getActiveTimer(timerId)) {
+  if (getActiveTimerId(timerId)) {
     cancelTimer(timerId);
   }
   // add a new timer object
@@ -51,8 +51,8 @@ function setTimer(timerId, myfunction, seconds){
 function cancelTimer(timerId) {
   // If timer exists and is active cancel it and renmove it from cache
   var timer = cache.get(timerId);
-  if(timer && timer.isActive()) {
-    timer.cancel();
+  if(timer) {
+    clearTimeout(timer);
   }
   cache.put(timerId, null);
 }

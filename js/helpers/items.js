@@ -51,3 +51,18 @@ function removeItemMemberLink(itemName, memberName) {
   let member = items.getItem(memberName);
   member.removeGroup(item);
 }
+
+function getParentItemInModel(item) {
+  var parentItem = null;
+  if(typeof item === "string") {
+    item = items.getItem(item);
+  }
+  item.groupNames.forEach(groupName => {
+    let group = items.getItem(groupName);
+    let groupSemanticMetadata = group.getMetadataValue("semantics");
+    if(groupSemanticMetadata && groupSemanticMetadata.startsWith("Location_")) {
+      parentItem = group;
+    }
+  });
+  return parentItem;
+}
