@@ -2,7 +2,7 @@ load('/openhab/conf/automation/js/helpers/items.js');
 
 class EquipmentController {
   constructor(controller) {
-    this.equipments = null;
+    this.devices = null;
     this.label = controller;
     logger.info("New controller \"" + this.label + "\" initiated.");
     
@@ -13,26 +13,26 @@ class EquipmentController {
   }
 
   getEquipment(equipmentId) {
-    let equipment = this.equipments.find(equipment => equipment.getName() === equipmentId);
-    if (equipment != undefined) {
-      return equipment;
+    let device = this.devices.find(device => device.getName() === equipmentId || device === equipmentId);
+    if (device != undefined) {
+      return device;
     }
     return null;
   }
 
   getEquipments() {
-    return this.equipments;
+    return this.devices;
   }
 
   getEquipmentByItem(itemName) {
     var result = null;
-    this.equipments.forEach(equipment => {
-      if(equipment.getName() === itemName) { 
-        result = equipment;
+    this.devices.forEach(device => {
+      if(device.getName() === itemName) { 
+        result = device;
       }
-      Object.entries(equipment.items).forEach(([key, item]) => {
+      Object.entries(device.items).forEach(([key, item]) => {
         if(item.name === itemName) { 
-            result = equipment;
+            result = device;
         }
       })
     });
@@ -41,9 +41,9 @@ class EquipmentController {
 
   getEquipmentsByLocation(location) {
     var equipments = new Array();
-    this.equipments.forEach(equipment => {
-      if(equipment.getLocationId() === location || equipment.getLocation() === location) { 
-        equipments.push(equipment);
+    this.devices.forEach(device => {
+      if(device.getLocationId() === location || device.getLocation() === location) { 
+        equipments.push(device);
       }
     });
     return equipments;
@@ -51,9 +51,9 @@ class EquipmentController {
 
   uninitialize() {
     logger.info("Controller \"" + this.label + "\" will be uninitialized.");
-    this.equipments.forEach(equipment => {
-      equipment.uninitialize();
-      delete this.equipments[equipment]
+    this.devices.forEach(device => {
+      device.uninitialize();
+      delete this.devices[device]
     })
   }
 }
@@ -64,11 +64,10 @@ class Equipment {
     this.equipment = equipment;
     this.name = equipment.name;
     this.label = equipment.label;
-    this.location = getParentItemInModel(equipment.name);
-    this.items = null;
+    this.location = this.getSemanticParent();
+    this.items = {};
     this.dynamic_items = new Array();
     logger.info("New equipment \""+this.label+"\" initiated.");
-    
   };
 
   uninitialize() {
@@ -82,14 +81,10 @@ class Equipment {
   loadItems(requiredItems) {
     Object.keys(requiredItems).forEach(key => {
       this.equipment.members.forEach(item => {
-        let itemSemantics = items.getItem(item.name).getMetadataValue("semantics");
-        if(itemSemantics && itemSemantics.value === item.class) {
-          if(item.property) {
-            if(item.property === itemSemantics.config.relatesTo) {
-              this.items[key] = items.getItem(item.name);
-            }
-          } else {
-            this.items[key] = items.getItem(item.name);
+        let itemSemantics = item.getMetadataValue("semantics");
+        if(itemSemantics === requiredItems[key].class) {
+          if(item.type === requiredItems[key].type) {
+            this.items[key] = item;
           }
         }
       });
@@ -117,8 +112,39 @@ class Equipment {
     return this.location.name;
   }
 
-  getChildItems() {
-    return this.items;
+  getSemanticParent() {
+    var parentItem = null;
+    this.equipment.groupNames.forEach(groupName => {
+      let group = items.getItem(groupName);
+      let groupSemanticMetadata = group.getMetadataValue("semantics");
+      if(groupSemanticMetadata && groupSemanticMetadata.startsWith("Location_")) {
+        parentItem = group;
+      }
+    });
+    return parentItem;
+  }
+
+  getParents() {
+    var parentItems = new Array();
+    this.equipment.groupNames.forEach(groupName => {
+      parentItems.push(items.getItem(groupName));
+    });
+    return parentItems;
+  }
+
+  getSemanticChilds() {
+    var childs = new Array();
+    this.equipment.members.forEach(memberName => {
+      let member = items.getItem(memberName);
+      if(member.getMetadataValue("semantics")) {
+        childs.oush(member);
+      }
+    });
+    return childs;
+  }
+
+  getChilds() {
+    return this.members;
   }
 
   crerateDynamicItem(channel, parentGroups, tags) {

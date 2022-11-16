@@ -12,9 +12,8 @@ const config = {
 }
 
 const requiredItems = {
-  color:       { name: "color",       type: "Color",  class: "Point_Control", property: "Property_Light"            },
-  brightness:  { name: "brightness",  type: "Dimmer", class: "Point_Control", property: "Property_Light"            },
-  temperature: { name: "temperature", type: "Dimmer", class: "Point_Control", property: "Property_ColorTemperature" }
+  color:       { name: "color",       type: "ColorItem",  class: "Point_Control" },
+  brightness:  { name: "brightness",  type: "DimmerItem", class: "Point_Control" },
 };
 
 class HueController extends EquipmentController {
@@ -29,8 +28,9 @@ class HueController extends EquipmentController {
     var ruleTriggeringItems = new Array();
     ruleTriggeringItems.push(triggers.ItemCommandTrigger(config.controllerItem))
     this.devices.forEach(device => {
-      ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["color"].name, "OFF", "ON"));
-      ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["color"].name, "ON", "OFF"));
+      if(device.items["color"]) {
+        ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["color"].name));
+      }
     });
 
     // Add controller rule
@@ -41,27 +41,58 @@ class HueController extends EquipmentController {
       description: "Executes " + config.controllerName + " commands.",
       triggers: ruleTriggeringItems,
       execute: event => {
-        if(event.itemName === config.controllerItem) {
-          // Perform command items
-        }
-        else if(items.getItem(event.itemName).type === "ColorItem") {
+        if(event.receivedState && tems.getItem(event.itemName).type === "ColorItem") {
           this.onColorChange(event);
         }
       }
     });
 
     logger.info(config.controllerName + " is ready.");
+    cache.put("HUEController", this);
   }
+
 
   loadDevices() {
     let devices = items.getItems();
-    return devices.filter(item => item.getMetadataValue("semantics") === config.semanticIdentifierString)
+    return devices.filter(item => item.getMetadataValue("semantics") === config.semanticIdentifierString);
   }
 
   onColorChange(event) {
     // If device has paired devices adapt their light
-    let device = this.getDeviceByItem(event.itemName);
-    device.pairedDevices.forEach(pairedDevice => pairedDevice.setColor(device.getColor()))
+    let device = this.getEquipmentByItem(event.itemName);
+    device.pairedDevices.forEach(pairedDevice => pairedDevice.setColor(device.getColor()));
+  }
+
+  executeClientCommand(hueClient) {
+    switch(hueClient.getCommand()) {
+      case "off":
+        hueClient.getLightBulb().setColor("OFF");
+        break;
+      case "on":
+        hueClient.getLightBulb().setColor("ON");
+        break;
+      case "setColor":
+        hueClient.getLightBulb().setColor(hueClient.getColor());
+        break;
+      case "setColorTransition" && hueClient.getTransitionTime() && hueClient.getTransitionInterval():
+        hueClient.getLightBulb().setColorTransition(hueClient.getColor(), hueClient.getTransitionTime(), hueClient.getTransitionInterval());
+        break;
+      case "setBrightness":
+        hueClient.getLightBulb().setBrightness(hueClient.getBrightness());
+        break;
+      case "pair":
+        hueClient.getPairedDevice().addPairedDevice(hueClient.getLightBulb());
+        break;
+      case "unpair":
+        this.devices.forEach(equipment => {
+          equipment.removePairedDevice(hueClient.getLightBulb());
+        });
+        break;
+      default:
+    } 
+    if(hueClient.getTurnLightOff()) {
+      hueClient.getLightBulb().setColor("OFF");
+    }
   }
 }
 
@@ -86,10 +117,10 @@ class HueEquipment extends Equipment {
   }
 
   removePairedDevice(device) {
-    if(!this.pairedDevices.includes(device)) {
+    if(this.pairedDevices.includes(device)) {
       logger.info(config.controllerName + " is removing light bulb synchronization from \"" + device.getLabel() + "\" to \"" + this.getLabel() + "\".");
-      pairedDevices = this.getPairedDevices().filter(pairedDevice => pairedDevice !== device);
-      this.pairedDevices = this.pairedDevices;
+      let pairedDevices = this.getPairedDevices().filter(pairedDevice => pairedDevice !== device);
+      this.pairedDevices = pairedDevices;
     }
     return this;
   }
@@ -99,7 +130,13 @@ class HueEquipment extends Equipment {
   }
 
   setColor(color) {
-    this.items["player"].sendCommand(color);
+    this.items["color"].sendCommand(color);
+    return this;
+  }
+
+  setColorTransition(color, time, interval) {
+    
+    this.items["color"].sendCommand(color);
     return this;
   }
 
@@ -113,9 +150,10 @@ class HueEquipment extends Equipment {
   }
 }
 
+
 var controller = null;
 var controllerGroupItem = null;
-var controllerItem = null
+var controllerItem = null;
 
 scriptLoaded = function () {
   controllerGroupItem = addItem(config.controllerGroupItem, "Group", "Sonos Controller Group", undefined, config.controllerTags);
@@ -125,7 +163,6 @@ scriptLoaded = function () {
 }
 
 scriptUnloaded = function () {
-  controller.uninitialize();
-  logger.info(config.controllerName + " uninialized.");
+  logger.info(config.controllerName + " unloaded.");
 }
 

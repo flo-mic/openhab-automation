@@ -92,6 +92,8 @@ class SonosController extends DeviceController {
     this.updateUiConfig();
     this.updateUiRadioConfig();
     logger.info(config.controllerName + " is ready.");
+    cache.put("SonosController", this);
+
   }
 
   getDeviceByZone(zoneName) {
@@ -431,7 +433,6 @@ scriptLoaded = function () {
 }
 
 scriptUnloaded = function () {
-  controller.uninitialize();
-  logger.info(config.controllerName + " uninialized.");
+  logger.info(config.controllerName + " unloaded.");
 }
 

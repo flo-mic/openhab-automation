@@ -1,6 +1,7 @@
 class SonosClient {
 
   constructor(client) {
+    this.controller  = cache.get("SonosController");
     this.zone        = null;
     this.command     = null;
     this.targetZone  = null;
@@ -14,7 +15,7 @@ class SonosClient {
     }
 
     if(typeof client === "string") {
-      this.zone = client;
+      this.setZone(client);
     } else {
       this.zone = client.zone;
       this.command = client.command;
@@ -26,23 +27,20 @@ class SonosClient {
   }
 
   send() {
-    var message = this;
-    delete message["commandList"];
-    Object.keys(message).forEach(key => {
-      if(message[key] === null || message[key] === undefined) {
-        delete message[key];
-      }
-    });
-    items.getItem("Sonos_Controller_Command").sendCommand(JSON.stringify(message))
+    this.controller.executeClientCommand(this);
   }
 
   getZone() {
     return this.zone;
   }
 
-  setZone(zone) {
-    this.zone = zone;
+  setZone(value) {
+    if(typeof value === "string") {
+      value = this.controller.getDeviceByZone(value);
+    }
+    this.zone = value;
     return this;
+    
   }
 
   getCommand() {
@@ -88,6 +86,9 @@ class SonosClient {
   }
 
   setTargetZone(value) {
+    if(typeof value === "string") {
+      value = this.controller.getDeviceByZone(value);
+    }
     this.targetZone = value;
     return this;
   }

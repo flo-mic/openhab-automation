@@ -1,4 +1,5 @@
 load('/openhab/conf/automation/js/classes/sonos_client.js');
+load('/openhab/conf/automation/js/classes/hue_client.js');
 load('/openhab/conf/automation/js/helpers/rules.js');
 
 const itemEvents = [
@@ -17,6 +18,7 @@ const itemEvents = [
     oldState: "ON",  
     execute: function () {
       new SonosClient("Wohnzimmer").setCommand("remove").send();
+      new HueClient("Lampen_Wohnzimmer").setCommand("off").send();
     }
   },{ 
     itemName: "Praesenz_Schlafzimmer",
@@ -26,6 +28,10 @@ const itemEvents = [
       if(items.getItem("Sonos_Wohnzimmer_Fernbedienung").state === "PLAY") {
         new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
       }
+      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Couch").send();
+      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Garten").send();
+      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Kueche").send();
+      new HueClient("Lampe_Schlafzimmer_LED").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_LED").send();
     }
   },{ 
     itemName: "Praesenz_Schlafzimmer",
@@ -33,6 +39,11 @@ const itemEvents = [
     oldState: "ON",  
     execute: function () {
       new SonosClient("Schlafzimmer").setCommand("remove").send();
+      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("unpair").setTurnLightOf(true).send();
+      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("unpair").setTurnLightOf(true).send();
+      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("unpair").setTurnLightOf(true).send();
+      new HueClient("Lampe_Schlafzimmer_LED").setCommand("unpair").setTurnLightOf(true).send();
+
     }
   },{ 
     itemName: "Praesenz_Badezimmer",
