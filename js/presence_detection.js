@@ -54,7 +54,7 @@ const presenceEvents = [
       doorSensor    = items.getItem('Tuer_Wohnzimmer_Status');
 
       // if event was triggered by closing door, reset presence sensors for new detection
-      if(event.itemName === doorSensor.name && event.newState === "CLOSED") {
+      if(event && event.itemName === doorSensor.name && event.newState === "CLOSED") {
         items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status_Zuruecksetzen').sendCommand("ON");
         items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status_Zuruecksetzen').sendCommand("ON");
       }
