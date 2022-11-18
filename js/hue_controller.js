@@ -26,6 +26,9 @@ class HueController extends EquipmentController {
     // Loading all devices
     this.devices = this.loadDevices().map(device => new HueEquipment(device));
 
+    // load metadata settings
+    this.devices.forEach(device => device.loadMetadataSettings(this));
+
     // Identify item trigger event for rules
     var ruleTriggeringItems = new Array();
     ruleTriggeringItems.push(triggers.ItemCommandTrigger(config.controllerItem))
@@ -43,7 +46,7 @@ class HueController extends EquipmentController {
       description: "Executes " + config.controllerName + " commands.",
       triggers: ruleTriggeringItems,
       execute: event => {
-        if(event.newState && tems.getItem(event.itemName).type === "ColorItem") {
+        if(event.newState && items.getItem(event.itemName).type === "ColorItem") {
           this.onColorChange(event);
         }
       }
@@ -76,8 +79,8 @@ class HueController extends EquipmentController {
       case "setColor":
         hueClient.getLightBulb().setColor(hueClient.getColor());
         break;
-      case "setColorTransition" && hueClient.getTransitionTime() && hueClient.getTransitionInterval():
-        hueClient.getLightBulb().setColorTransition(hueClient.getColor(), hueClient.getTransitionTime(), hueClient.getTransitionInterval());
+      case "setColorTransition":
+        hueClient.getLightBulb().setColorTransition(hueClient.getColor(), hueClient.getTransitionTime(), hueClient.getTransitionSteps());
         break;
       case "setBrightness":
         hueClient.getLightBulb().setBrightness(hueClient.getBrightness());
@@ -103,25 +106,24 @@ class HueEquipment extends Equipment {
     super(device);
     this.pairedDevices = new Array();
     this.loadItems(requiredItems);
-
-    // loading paired devices from item metadata
-    if(this.items["color"]) {
-      let pairedDevices = JSON.parse(this.items["color"].getMetadataValue(config.controllerMetadata));
-      if(Array.isArray(pairedDevices)) {
-        this.pairedDevices = pairedDevices;
-      };
-    }
   };
 
-  getPairedDevices() {
-    return this.pairedDevices;
+  loadMetadataSettings(controller) {
+    // loading paired devices from item metadata
+    let pairedDevices = this.getMetadataSettings(config.controllerMetadata, "pairedDevices");
+    if(pairedDevices && Array.isArray(pairedDevices)) {
+      pairedDevices.forEach(device => {
+        this.pairedDevices.push(controller.getEquipment(device.name));
+      });
+    }
+    return this;
   }
 
   addPairedDevice(device) {
     if(!this.pairedDevices.includes(device)) {
       logger.info(config.controllerName + " is synchronizing light bulb \"" + device.getLabel() + "\" with \"" + this.getLabel() + "\".");
       this.pairedDevices.push(device);
-      this.items["color"].updateMetadataValue(config.controllerMetadata, JSON.stringify(this.pairedDevices));
+      this.setEquipmentSettings(config.controllerMetadata, this.pairedDevices, "pairedDevices");
       device.setColor(this.getColor());
     };
     return this;
@@ -130,9 +132,9 @@ class HueEquipment extends Equipment {
   removePairedDevice(device) {
     if(this.pairedDevices.includes(device)) {
       logger.info(config.controllerName + " is removing light bulb synchronization from \"" + device.getLabel() + "\" to \"" + this.getLabel() + "\".");
-      let pairedDevices = this.getPairedDevices().filter(pairedDevice => pairedDevice !== device);
+      let pairedDevices = this.pairedDevices.filter(pairedDevice => pairedDevice !== device);
       this.pairedDevices = pairedDevices;
-      this.items["color"].updateMetadataValue(config.controllerMetadata, JSON.stringify(this.pairedDevices));
+      this.setEquipmentSettings(config.controllerMetadata, this.pairedDevices, "pairedDevices");
     }
     return this;
   }
@@ -146,48 +148,53 @@ class HueEquipment extends Equipment {
     return this;
   }
 
-  setColorTransition(color, time, interval) {
+  setColorTransition(color, time, steps) {
     if(this.colorTransitionSettings) {
       cancelTimer(this.id + "_setColorTransition")
     }
-
       
-    let executions = time / interval;
     this.colorTransitionSettings = {
-      executions: executions,
-      interval: time * interval,  
-      addHue: (this.getColor().split(",")[0] - color.split(",")[0]) / executions,
-      addSaturation: (this.getColor().split(",")[1] - color.split(",")[1]) / executions,
-      addBrightness: (this.getColor().split(",")[2] - color.split(",")[2]) / executions
+      steps: parseInt(steps),
+      time: parseInt(time) / parseInt(steps),  
+      color: color.split(",")
     }
 
     logger.info(config.controllerName + " is starting color transition for \"" + this.getLabel() + "\".");
-    this.startColorTransition();
+    this.startColorTransition(this);
     return this;
   }
 
-  startColorTransition() {
-    if(this.colorTransitionSettings.executions > 0) {
-      this.colorTransitionSettings.executions = this.colorTransitionSettings.executions - 1;
-      addTimer(this.id + "_setColorTransition", function() {      
-        cancelTimer(this.id + "_setColorTransition")
-        hue = this.getColor().split(",")[0] + this.colorTransitionSettings.addHue;
-        saturation = this.getColor().split(",")[1] + this.colorTransitionSettings.addSaturation;
-        brightness = this.getColor().split(",")[2] + this.colorTransitionSettings.addBrightness;
-        this.setColor(hue + "," + saturation + "," + brightness)
-        this.startColorTransition();
-      }, this.colorTransitionSettings.interval);
+
+  startColorTransition(device) {
+    if(device.colorTransitionSettings.steps > 0) {
+      device.colorTransitionSettings.steps = device.colorTransitionSettings.steps - 1;
+      // Function generator to pass variables to time outside of this context (variables need to be resolved already now)
+      var execFunction = function(device) {
+        return function() {
+          let set = device.colorTransitionSettings;
+          let color = device.getColor().split(",");
+          let hue = parseInt((parseInt(set.color[0]) - parseInt(color[0])) / (set.steps + 1) + parseInt(color[0]));
+          let saturation = parseInt((parseInt(set.color[1]) - parseInt(color[1])) / (set.steps + 1) + parseInt(color[1]));
+          let brightness = parseInt((parseInt(set.color[2]) - parseInt(color[2])) / (set.steps + 1) + parseInt(color[2]));
+          device.setColor(hue + "," + saturation + "," + brightness);
+          if(device.getBrightness() !== brightness) {
+            device.setBrightness(brightness);
+          }
+          device.startColorTransition(device);
+        }
+      }
+      addTimer(device.getId() + "_setColorTransition", execFunction(device), device.colorTransitionSettings.time);
     } else {
-      this.colorTransitionSettings = null;
+      device.colorTransitionSettings = null;
     }
   }
 
   getBrightness() {
-    return this.items["brightness"].state;
+    return parseInt(this.items["brightness"].state);
   }
 
   setBrightness(value) {
-    this.items["brightness"].sendCommand(value);
+    this.items["brightness"].sendCommand(parseInt(value));
     return this;
   }
 }

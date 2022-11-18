@@ -1,5 +1,125 @@
 load('/openhab/conf/automation/js/helpers/timer.js');
 
+const presenceEvents = [
+  { 
+    presenceItem: "Praesenz_Badezimmer",
+    roomName: "Badezimmer",
+    turnOffDelay: 30,
+    eventItems: [
+      { itemName: "Bewegungsmelder_Badezimmer_Status",    newState: "ON"  },
+      { itemName: "Bewegungsmelder_Badezimmer_Status",    newState: "OFF" }
+    ],
+    isPresence: function (event) {
+      motionSensor = items.getItem('Bewegungsmelder_Badezimmer_Status')
+      if(motionSensor.state === "ON") {
+        return true;
+      }
+      return false;
+    }
+  },
+  { 
+    presenceItem: "Praesenz_Schlafzimmer",
+    roomName: "Schlafzimmer",
+    turnOffDelay: 30,
+    eventItems: [
+      { itemName: "Bewegungsmelder_Schlafzimmer_Status",  newState: "ON"  },
+      { itemName: "Bewegungsmelder_Schlafzimmer_Status",  newState: "OFF" },
+      { itemName: "Praesenz_Wohnzimmer",                  newState: "ON"  },
+      { itemName: "Praesenz_Wohnzimmer",                  newState: "OFF" }
+    ],
+    isPresence: function (event) {
+      motionSensor = items.getItem('Bewegungsmelder_Schlafzimmer_Status')
+      presenceLivingRoom = items.getItem('Praesenz_Wohnzimmer')
+      if(presenceLivingRoom.state === "ON" && motionSensor.state === "ON") {
+        return true;
+      }
+      return false;
+    }
+  },
+  { 
+    presenceItem: "Praesenz_Wohnzimmer",
+    roomName: "Wohnzimmer",
+    turnOffDelay: 30,
+    eventItems: [
+      { itemName: "Bewegungsmelder_Wohnzimmer_Kueche_Status",       newState: "ON"     },
+      { itemName: "Bewegungsmelder_Wohnzimmer_Kueche_Status",       newState: "OFF"    },
+      { itemName: "Bewegungsmelder_Wohnzimmer_Schreibtisch_Status", newState: "ON"     },
+      { itemName: "Bewegungsmelder_Wohnzimmer_Schreibtisch_Status", newState: "OFF"    },
+      { itemName: "Tuer_Wohnzimmer_Status",                         newState: "OPEN"   },
+      { itemName: "Tuer_Wohnzimmer_Status",                         newState: "CLOSED" }
+    ],
+    isPresence: function (event) {
+      motionSensor1 = items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status');
+      motionSensor2 = items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status');
+      doorSensor    = items.getItem('Tuer_Wohnzimmer_Status');
+
+      // if event was triggered by closing door, reset presence sensors for new detection
+      if(event.itemName === doorSensor.name && event.newState === "CLOSED") {
+        items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status_Zuruecksetzen').sendCommand("ON");
+        items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status_Zuruecksetzen').sendCommand("ON");
+      }
+      // Check for presence
+      if(motionSensor1.state === "OFF" && motionSensor2.state === "OFF" && doorSensor.state === "CLOSED") {
+        return false;
+      }
+      return false;
+    }
+  }
+]
+
+// Load event trigger for rule dynamically during start
+function getRuleTrigger() {
+  var ruleTriggeringEvents = new Array();
+  presenceEvents.forEach(room => {
+    room.eventItems.forEach(eventItem => {
+      ruleTriggeringEvents.push(triggers.ItemStateChangeTrigger(eventItem.itemName, null, eventItem.newState));
+    })
+  })
+  return ruleTriggeringEvents;
+}
+
+// Function generator to pass variables to time outside of this context (variables need to be resolved already now)
+var timerFunction = function(presenceItem, roomEvent) {
+  return function() {
+    if(presenceItem.state !== "OFF" && !roomEvent.isPresence()) {
+      console.log('No more presence in ' + roomEvent.roomName + '.');
+      presenceItem.postUpdate("OFF");
+    }
+  }
+}
+
+
+// Add Presence detection rule
+rules.JSRule({
+  name: "Presence detection Control",
+  id: "Presence_Detection_Control",
+  tags: ["Presence", "Presence detection"],
+  description: "Präsenzerkennung im Räumen mithilfe von Bewegungsmeldern und Sensoren",
+  triggers: getRuleTrigger(),
+  execute: event => {
+    // Get all rooms which have the current event as trigger item
+    var roomEvents = presenceEvents.filter(room => (room.eventItems.filter(eventItem => eventItem.itemName === event.itemName && eventItem.newState === event.newState).length > 0));
+
+    // Refresh the presence in every triggered room
+    roomEvents.forEach(room => {
+      let timerId = room.roomName + "_presenceTimer";
+      let presenceItem = items.getItem(room.presenceItem);
+      if(room.isPresence()) {
+        // stop existing timer if running
+        cancelTimer(timerId);
+        if(presenceItem.state !== "ON") {
+          console.log('Presence in ' + room.roomName + ' detected.');
+          presenceItem.postUpdate("ON");
+        }
+      } else if(!getActiveTimerId(timerId)) {
+        // Add timer to turn off the light in 30 seconds
+        addTimer(timerId, timerFunction(presenceItem, room), room.turnOffDelay);
+      }
+    });
+  }
+});
+
+/*
 // Presence detection Badezimmer
 rules.JSRule({
   name: "Präsenzerkennung Badezimmer",
@@ -160,3 +280,4 @@ rules.JSRule({
     }
   }
 });
+*/
