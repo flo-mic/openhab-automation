@@ -62,7 +62,7 @@ const presenceEvents = [
       if(motionSensor1.state === "OFF" && motionSensor2.state === "OFF" && doorSensor.state === "CLOSED") {
         return false;
       }
-      return false;
+      return true;
     }
   }
 ]

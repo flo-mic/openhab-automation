@@ -282,7 +282,8 @@ class SonosDevice extends Device {
     } else {
       if(zoneMembers.length > 1) {
         logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + zoneMembers.length -1 + "\".");
-        this.items["standalone"].sendCommand("ON")
+        this.items["standalone"].sendCommand("ON");
+        this.setControl("PAUSE");
       } else {
         logger.info("Stoping current controller \"" + device.getLabel() + "\".");
         this.setControl("PAUSE");
