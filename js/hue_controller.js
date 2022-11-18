@@ -1,11 +1,13 @@
 load('/openhab/conf/automation/js/classes/equipment.js');
 load('/openhab/conf/automation/js/helpers/items.js');
+load('/openhab/conf/automation/js/helpers/timer.js');
 
 let logger = log('HueController');
 
 const config = {
   controllerGroupItem: "HUE_Controller",
   controllerTags: ["HUE Controller"],
+  controllerMetadata: "HUEController",
   controllerName: "HUE Controller",
   semanticIdentifierString: "Equipment_Lightbulb",
   controllerItem: "HUE_Controller_Command"
@@ -41,7 +43,7 @@ class HueController extends EquipmentController {
       description: "Executes " + config.controllerName + " commands.",
       triggers: ruleTriggeringItems,
       execute: event => {
-        if(event.receivedState && tems.getItem(event.itemName).type === "ColorItem") {
+        if(event.newState && tems.getItem(event.itemName).type === "ColorItem") {
           this.onColorChange(event);
         }
       }
@@ -101,6 +103,14 @@ class HueEquipment extends Equipment {
     super(device);
     this.pairedDevices = new Array();
     this.loadItems(requiredItems);
+
+    // loading paired devices from item metadata
+    if(this.items["color"]) {
+      let pairedDevices = JSON.parse(this.items["color"].getMetadataValue(config.controllerMetadata));
+      if(Array.isArray(pairedDevices)) {
+        this.pairedDevices = pairedDevices;
+      };
+    }
   };
 
   getPairedDevices() {
@@ -111,6 +121,7 @@ class HueEquipment extends Equipment {
     if(!this.pairedDevices.includes(device)) {
       logger.info(config.controllerName + " is synchronizing light bulb \"" + device.getLabel() + "\" with \"" + this.getLabel() + "\".");
       this.pairedDevices.push(device);
+      this.items["color"].updateMetadataValue(config.controllerMetadata, JSON.stringify(this.pairedDevices));
       device.setColor(this.getColor());
     };
     return this;
@@ -121,6 +132,7 @@ class HueEquipment extends Equipment {
       logger.info(config.controllerName + " is removing light bulb synchronization from \"" + device.getLabel() + "\" to \"" + this.getLabel() + "\".");
       let pairedDevices = this.getPairedDevices().filter(pairedDevice => pairedDevice !== device);
       this.pairedDevices = pairedDevices;
+      this.items["color"].updateMetadataValue(config.controllerMetadata, JSON.stringify(this.pairedDevices));
     }
     return this;
   }
@@ -135,9 +147,39 @@ class HueEquipment extends Equipment {
   }
 
   setColorTransition(color, time, interval) {
-    
-    this.items["color"].sendCommand(color);
+    if(this.colorTransitionSettings) {
+      cancelTimer(this.id + "_setColorTransition")
+    }
+
+      
+    let executions = time / interval;
+    this.colorTransitionSettings = {
+      executions: executions,
+      interval: time * interval,  
+      addHue: (this.getColor().split(",")[0] - color.split(",")[0]) / executions,
+      addSaturation: (this.getColor().split(",")[1] - color.split(",")[1]) / executions,
+      addBrightness: (this.getColor().split(",")[2] - color.split(",")[2]) / executions
+    }
+
+    logger.info(config.controllerName + " is starting color transition for \"" + this.getLabel() + "\".");
+    this.startColorTransition();
     return this;
+  }
+
+  startColorTransition() {
+    if(this.colorTransitionSettings.executions > 0) {
+      this.colorTransitionSettings.executions = this.colorTransitionSettings.executions - 1;
+      addTimer(this.id + "_setColorTransition", function() {      
+        cancelTimer(this.id + "_setColorTransition")
+        hue = this.getColor().split(",")[0] + this.colorTransitionSettings.addHue;
+        saturation = this.getColor().split(",")[1] + this.colorTransitionSettings.addSaturation;
+        brightness = this.getColor().split(",")[2] + this.colorTransitionSettings.addBrightness;
+        this.setColor(hue + "," + saturation + "," + brightness)
+        this.startColorTransition();
+      }, this.colorTransitionSettings.interval);
+    } else {
+      this.colorTransitionSettings = null;
+    }
   }
 
   getBrightness() {

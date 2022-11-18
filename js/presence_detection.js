@@ -34,7 +34,7 @@ rules.JSRule({
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, function() {
         cancelTimer(timerId);
-        if(presenceItem.state !== "OFF") {
+        if(presenceItem.state !== "OFF" && items.getItem(motionSensor.name).state !== "ON") {
           console.log('No more presence in ' + room + '.');
           presenceItem.postUpdate("OFF");
         }
@@ -88,7 +88,7 @@ rules.JSRule({
       // Add timer to turn off the light in 30 seconds
       addTimer(timerId, function () {
         cancelTimer(timerId);
-        if(presenceItem.state !== "OFF") {
+        if(presenceItem.state !== "OFF" && items.getItem(motionSensor.name).state !== "ON") {
           console.log('No more presence in ' + room + '.');
           presenceItem.postUpdate("OFF");
         }
@@ -131,7 +131,6 @@ rules.JSRule({
     console.log("Bewegungsmelder Küche: " + motionSensor1.state);
     console.log("Bewegungsmelder Wohnzimmer: " + motionSensor2.state);
     console.log("Tür: " + doorSensor.state);
-    console.log("Tür item name: " + doorSensor.state);
     console.log("Trigger Item: " + event.itemName);
 
     // Check if presence was detected on a sensor
@@ -144,14 +143,16 @@ rules.JSRule({
         }
     }
     // Check if door was closed to check again for active presence
-    else if(event.itemName === doorSensor.name && doorSensor.state === "CLOSED" && !(getActiveTimerId(timerId))) {
+    else if(event.newState === "CLOSED" && !(getActiveTimerId(timerId))) {
       // Reset presence state of motion detectors
       resetMotion1.sendCommand("ON");
       resetMotion2.sendCommand("ON");
       // Add timer to turn of the light in 30 seconds
       addTimer(timerId, function (){
         cancelTimer(timerId);
-        if(presenceItem.state !== "OFF") {
+        console.log("Bewegungsmelder Küche: " + motionSensor1.state);
+        console.log("Bewegungsmelder Wohnzimmer: " + motionSensor2.state);
+        if(presenceItem.state !== "OFF" && items.getItem(motionSensor1.name).state !== "ON" && items.getItem(motionSensor2.name).state !== "ON") {
           console.log('No more presence in ' + room + '.');
           presenceItem.postUpdate("OFF");
         }

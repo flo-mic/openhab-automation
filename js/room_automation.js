@@ -39,10 +39,10 @@ const itemEvents = [
     oldState: "ON",  
     execute: function () {
       new SonosClient("Schlafzimmer").setCommand("remove").send();
-      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("unpair").setTurnLightOf(true).send();
-      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("unpair").setTurnLightOf(true).send();
-      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("unpair").setTurnLightOf(true).send();
-      new HueClient("Lampe_Schlafzimmer_LED").setCommand("unpair").setTurnLightOf(true).send();
+      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("unpair").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("unpair").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("unpair").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_LED").setCommand("unpair").setTurnLightOff(true).send();
 
     }
   },{ 

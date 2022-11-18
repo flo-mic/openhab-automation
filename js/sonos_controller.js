@@ -148,13 +148,17 @@ class SonosController extends DeviceController {
       case "remove":
         this.getCoordinator(sonosClient.getZone()).removeDevice(sonosClient.getZone(), this.getZoneMembers(sonosClient.getZone()));
         break;
-      case "play" && sonosClient.getUri() !== null:
-        this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
-        break;
-      case "play" && sonosClient.getTuneInRadio() !== null:
-        this.getCoordinator(sonosClient.getZone()).playTuneInRadio(sonosClient.getUri());
-        break;
       case "play":
+        if(sonosClient.getUri()) {
+          this.getCoordinator(sonosClient.getZone()).playUri(sonosClient.getUri());
+        }
+        else if(sonosClient.getTuneInRadio()) {
+          this.getCoordinator(sonosClient.getZone()).playTuneInRadio(sonosClient.getTuneInRadio());
+        }
+        else {
+          this.getCoordinator(sonosClient.getZone()).setControl(sonosClient.getCommand());
+        }
+        break;
       case "pause":
         this.getCoordinator(sonosClient.getZone()).setControl(sonosClient.getCommand());
         break;
@@ -263,6 +267,9 @@ class SonosDevice extends Device {
 
   addDevice(controller, device) {
     if(device.getId() != this.getId() && this.getId() != controller.getCoordinator(device).getId()) {
+      if(device.getControl() !== "PLAY") {
+        device.setVolume(this.getVolume());
+      }
       logger.info("Adding \"" + device.getLabel() + "\" to device \"" + this.getLabel() + "\".");
       this.items["add"].sendCommand(device.getId())
     }
@@ -276,28 +283,30 @@ class SonosDevice extends Device {
       if(zoneMembers.length > 1) {
         logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + zoneMembers.length -1 + "\".");
         this.items["standalone"].sendCommand("ON")
+      } else {
+        logger.info("Stoping current controller \"" + device.getLabel() + "\".");
+        this.setControl("PAUSE");
       }
     }
   }
 
   playUri(uri) {
+    logger.info("Playing Uri \"" + uri + "\" to device \"" + this.getLabel() + "\".");
     if(this.getControl() !== "PLAY") {
       this.setDefaultVolume();
     }
-    logger.info("Playing Uri \"" + uri + "\" to device \"" + this.getLabel() + "\".");
     this.items["playUri"].sendCommand(uri);
     return this;
   }
 
   playTuneInRadio(radio) {
+    logger.info("Playing TuneIn Radio \"" + radio + "\" to device \"" + this.getLabel() + "\".");
     if(this.getControl() !== "PLAY") {
       this.setDefaultVolume();
     }
-    if(isInteger(radio)) {
-      logger.info("Playing TuneIn Radio id \"" + radio + "\" to device \"" + this.getLabel() + "\".");
+    if(Number.isInteger(radio)) {
       this.items["tuneIn"].sendCommand(radio); 
     } else {
-      logger.info("Playing TuneIn Radio \"" + radiosConfig[radio].name + "\" to device \"" + this.getLabel() + "\".");
       this.items["tuneIn"].sendCommand(radiosConfig[radio].tuneInId);
     }
     return this;
@@ -348,6 +357,7 @@ class SonosDevice extends Device {
   }
 
   setControl(control) {
+    logger.info(config.controllerName + " is executing command \"" + control.toUpperCase() + "\" on device \"" + this.getLabel() + "\".");
     if(this.getControl() !== "PLAY") {
       this.setDefaultVolume();
     }

@@ -9,12 +9,12 @@ class HueClient {
     this.brightness     = null;
     this.turnLightOff   = null;
     this.transitionTime = null;
-    this.transitionInterval = null;
+    this.transitionSteps = null;
     this.commandList  = {
       off: "off",
       on: "on",
       setColor: "setColor",
-      setColor: "setColorTransition",
+      setColorTransition: "setColorTransition",
       setBrightness: "setBrightness",
       pair: "pair",
       unpair: "unpair",
@@ -30,13 +30,16 @@ class HueClient {
       this.brightness = client.brightness;
       this.turnLightOff = client.turnLightOff;
       this.transitionTime = client.transitionTime;
-      this.transitionInterval = client.transitionInterval;
+      this.transitionSteps = client.transitionSteps;
     }
 
   }
 
   send() {
-    this.controller.executeClientCommand(this);
+    var controller = this.controller;
+    this.controller = null;
+    controller.executeClientCommand(this);
+    this.controller = controller;
   }
 
   getLightBulb() {
@@ -96,7 +99,7 @@ class HueClient {
     return this.turnLightOff;
   }
 
-  setTurnLightOf(value) {
+  setTurnLightOff(value) {
     this.turnLightOff = value;
     return this;
   }
@@ -110,12 +113,12 @@ class HueClient {
     return this;
   }
 
-  getTransitionInterval() {
-    return this.transitionInterval;
+  getTransitionSteps() {
+    return this.transitionSteps;
   }
 
-  setTransitionInterval(value) {
-    this.transitionInterval = value;
+  setTransitionSteps(value) {
+    this.transitionSteps = value;
     return this;
   }
 }

@@ -27,7 +27,10 @@ class SonosClient {
   }
 
   send() {
-    this.controller.executeClientCommand(this);
+    var controller = this.controller;
+    this.controller = null;
+    controller.executeClientCommand(this);
+    this.controller = controller;
   }
 
   getZone() {

@@ -78,6 +78,15 @@ class Equipment {
     this.dynamic_items = new Array();
   }
 
+  getMetadataSettings(key, subkey=null) {
+    getItemMetadataValueAsObject(this.getId(), key, subkey);
+  }
+
+  setEquipmentSettings(key, value, subkey=null) {
+    setItemMetadataValueFromObject(this.getId(), key, value, subkey);
+  }
+
+
   loadItems(requiredItems) {
     Object.keys(requiredItems).forEach(key => {
       this.equipment.members.forEach(item => {
@@ -117,7 +126,7 @@ class Equipment {
     this.equipment.groupNames.forEach(groupName => {
       let group = items.getItem(groupName);
       let groupSemanticMetadata = group.getMetadataValue("semantics");
-      if(groupSemanticMetadata && groupSemanticMetadata.startsWith("Location_")) {
+      if(groupSemanticMetadata) {
         parentItem = group;
       }
     });

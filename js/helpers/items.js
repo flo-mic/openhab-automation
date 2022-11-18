@@ -66,3 +66,57 @@ function getParentItemInModel(item) {
   });
   return parentItem;
 }
+
+// gets the metadata value from key or subkey of an items metadata
+function getItemMetadataValueAsObject(item, key, subkey=null) {
+  if(typeof item === "string") {
+    item = items.getItem(item);
+  }
+  let value = JSON.parse(item.getMetadataValue(key));
+  if(value && subkey) {
+    return value[subkey];    
+  }
+  return value;
+}
+
+// gets the metadata value from key or subkey of an items metadata
+function setItemMetadataValueFromObject(item, key, value, subkey=null) {
+  if(typeof item === "string") {
+    item = items.getItem(item);
+  }
+  // If metadata namespace is not available create it 
+  if(!getItemMetadataValueAsObject(item, key)) {
+    var MetadataRegistry = osgi.getService('org.openhab.core.items.MetadataRegistry');
+    var Metadata = Java.type('org.openhab.core.items.Metadata');
+    var MetadataKey = Java.type('org.openhab.core.items.MetadataKey');
+    mKey = new MetadataKey(key, item.name)
+    MetadataRegistry.add(new Metadata(mKey, "", {}));
+    var data = {};
+    data[subkey] = value;
+    item.updateMetadataValue(key, JSON.stringify(data));
+  } else {
+    var data = value;
+    // If only subkey should be updated get current state
+    if(subkey) {
+      data = getItemMetadataValueAsObject(item, key);
+      data[subkey] = value;
+    }
+    item.updateMetadataValue(key, JSON.stringify(data));
+  }
+}
+
+// gets the metadata value from key or subkey of an items metadata
+function removeMetadata(item, key, subkey=null) {
+  if(typeof item === "string") {
+    item = items.getItem(item);
+  }
+  if(subkey) {
+    let data = getItemMetadataValueAsObject(item, key);
+    delete data[subkey];
+    setItemMetadataValueFromObject(item, key, data);
+  } else {
+    var MetadataRegistry = osgi.getService('org.openhab.core.items.MetadataRegistry');
+    var MetadataKey = Java.type('org.openhab.core.items.MetadataKey');
+    MetadataRegistry.remove(new MetadataKey(key, item.name));
+  }
+}

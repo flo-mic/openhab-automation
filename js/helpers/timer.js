@@ -9,6 +9,10 @@
 
 // Create a timer and persist in cache
 function addTimer(timerId, myfunction, seconds){
+  // Cancel existing timer if exists
+  if (getActiveTimerId(timerId)) {
+    cancelTimer(timerId);
+  }
   // Create timer
   var timer  = setTimeout(myfunction, seconds*1000);
   // persist timer in cache
@@ -33,17 +37,6 @@ function getActiveTimerId(timerId) {
     return timer;
   }
   return null;
-}
-
-
-// Set a timer, existing timers will be canceled and new timers started
-function setTimer(timerId, myfunction, seconds){
-  // Cancel existing timer if exists
-  if (getActiveTimerId(timerId)) {
-    cancelTimer(timerId);
-  }
-  // add a new timer object
-  addTimer(timerId, myfunction, seconds); 
 }
 
 
