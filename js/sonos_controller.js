@@ -110,7 +110,7 @@ class SonosController extends DeviceController {
 
   getCoordinator(device) {
     if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
-      return this;
+      return device;
     }
     return this.getDevice(device.items["coordinator"].state);
   }
@@ -276,12 +276,12 @@ class SonosDevice extends Device {
   }
 
   removeDevice(device, zoneMembers) {
-    if(device.getId() != this.getId()) {
+    if(device.getId() !== this.getId()) {
       logger.info("Removing \"" + device.getLabel() + "\" from device \"" + this.getLabel() + "\".");
       this.items["remove"].sendCommand(device.getId())
     } else {
       if(zoneMembers.length > 1) {
-        logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + zoneMembers.length -1 + "\".");
+        logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + (zoneMembers.length -1) + "\".");
         this.items["standalone"].sendCommand("ON");
         this.setControl("PAUSE");
       } else {

@@ -4,7 +4,7 @@ class HueClient {
     this.controller = cache.get("HUEController");
     this.lightbulb      = null;
     this.command        = null;
-    this.pairedDevice   = null;
+    this.targetDevice   = null;
     this.color          = null;
     this.brightness     = null;
     this.turnLightOff   = null;
@@ -16,8 +16,8 @@ class HueClient {
       setColor: "setColor",
       setColorTransition: "setColorTransition",
       setBrightness: "setBrightness",
-      pair: "pair",
-      unpair: "unpair",
+      add: "add",
+      remove: "remove",
     }
 
     if(typeof client === "string") {
@@ -25,7 +25,7 @@ class HueClient {
     } else {
       this.lightbulb = client.lightbulb;
       this.command = client.command;
-      this.pairedDevice = client.pairedDevice;
+      this.targetDevice = client.targetDevice;
       this.color = client.color;
       this.brightness = client.brightness;
       this.turnLightOff = client.turnLightOff;
@@ -65,15 +65,15 @@ class HueClient {
     return this;
   }
 
-  getPairedDevice() {
-    return this.pairedDevice;
+  getTargetDevice() {
+    return this.targetDevice;
   }
 
-  setPairedDevice(value) {
+  setTargetDevice(value) {
     if(typeof value === "string") {
       value = this.controller.getEquipmentByItem(value);
     }
-    this.pairedDevice = value;
+    this.targetDevice = value;
     return this;
   }
 

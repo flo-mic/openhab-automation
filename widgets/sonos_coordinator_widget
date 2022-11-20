@@ -147,7 +147,7 @@ slots:
                                       action: variable
                                       actionVariable: soundSettings
                                       actionVariableValue: =loop.zoneVolume
-                                      popoverClose: .popoverVolumeSettings
+                                      popupClose: .popupSoundSettings
                                       popupOpen: .popupSoundSettings
                                       style:
                                         height: 100%

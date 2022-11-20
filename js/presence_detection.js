@@ -52,7 +52,6 @@ const presenceEvents = [
       motionSensor1 = items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status');
       motionSensor2 = items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status');
       doorSensor    = items.getItem('Tuer_Wohnzimmer_Status');
-
       // if event was triggered by closing door, reset presence sensors for new detection
       if(event && event.itemName === doorSensor.name && event.newState === "CLOSED") {
         items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status_Zuruecksetzen').sendCommand("ON");
@@ -104,7 +103,7 @@ rules.JSRule({
     roomEvents.forEach(room => {
       let timerId = room.roomName + "_presenceTimer";
       let presenceItem = items.getItem(room.presenceItem);
-      if(room.isPresence()) {
+      if(room.isPresence(event)) {
         // stop existing timer if running
         cancelTimer(timerId);
         if(presenceItem.state !== "ON") {

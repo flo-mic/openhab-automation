@@ -28,10 +28,10 @@ const itemEvents = [
       if(items.getItem("Sonos_Wohnzimmer_Fernbedienung").state === "PLAY") {
         new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
       }
-      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Couch").send();
-      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Garten").send();
-      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_Kueche").send();
-      new HueClient("Lampe_Schlafzimmer_LED").setCommand("pair").setPairedDevice("Lampe_Wohnzimmer_LED").send();
+      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_Couch").send();
+      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_Garten").send();
+      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_Kueche").send();
+      new HueClient("Lampe_Schlafzimmer_LED").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_LED").send();
     }
   },{ 
     itemName: "Praesenz_Schlafzimmer",
@@ -39,10 +39,10 @@ const itemEvents = [
     oldState: "ON",  
     execute: function () {
       new SonosClient("Schlafzimmer").setCommand("remove").send();
-      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("unpair").setTurnLightOff(true).send();
-      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("unpair").setTurnLightOff(true).send();
-      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("unpair").setTurnLightOff(true).send();
-      new HueClient("Lampe_Schlafzimmer_LED").setCommand("unpair").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_Bett").setCommand("remove").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_Garten").setCommand("remove").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_Tuer").setCommand("remove").setTurnLightOff(true).send();
+      new HueClient("Lampe_Schlafzimmer_LED").setCommand("remove").setTurnLightOff(true).send();
 
     }
   },{ 

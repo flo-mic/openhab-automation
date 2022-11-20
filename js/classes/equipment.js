@@ -73,7 +73,7 @@ class Equipment {
   uninitialize() {
     logger.info("Equipment \""+this.label+"\" will be uninitialized.");
     this.dynamic_items.forEach(item => {
-      this.removeDynamicItem(item);
+      this.removeInternalItem(item);
     })
     this.dynamic_items = new Array();
   }
@@ -86,19 +86,36 @@ class Equipment {
     setItemMetadataValueFromObject(this.getId(), key, value, subkey);
   }
 
-
-  loadItems(requiredItems) {
+  loadItems(requiredItems, tags = new Array()) {
     Object.keys(requiredItems).forEach(key => {
-      this.equipment.members.forEach(item => {
-        let itemSemantics = item.getMetadataValue("semantics");
-        if(itemSemantics === requiredItems[key].class) {
+      if(!requiredItems[key].internal) {
+        this.equipment.members.forEach(item => {
           if(item.type === requiredItems[key].type) {
-            this.items[key] = item;
+            if(requiredItems[key].class && itemHasSemanticProperties(item, requiredItems[key].class, requiredItems[key].property)) {
+              this.items[key] = item;
+            }
+            if(requiredItems[key].tags) {
+              if(requiredItems[key].tags.every(tag => item.tags.includes(tag))) {
+                this.items[key] = item;
+              }
+            }
           }
-        }
-      });
+        });
+      } else {
+        this.items[key] = this.loadInternalItems(requiredItems[key].name, requiredItems[key].type, tags);
+      }
     });
     return this;    
+  }
+
+  loadInternalItems(name, type, tags) {
+    let label = this.getLabel() + " " + name;
+    name = this.getName() + "_" + name;
+    var item = items.getItem(name, true);
+    if(!item) {
+      item = this.crerateInternalItem(name, label, type, tags);
+    }
+    return item;
   }
 
   getId() {
@@ -156,18 +173,15 @@ class Equipment {
     return this.members;
   }
 
-  crerateDynamicItem(channel, parentGroups, tags) {
-    let name = this.getName() + "_" + channel.name;
-    let label = this.getLabel() + " " + channel.name;
-    logger.info("Creating dynamic item \"" + label + "\" on equipment \"" + this.getLabel() + "\"");
-    let item = addItem(name, channel.type, label, parentGroups, tags);
-    if(channel.internal) {
-      this.dynamic_items.push({ item: item, channel: null });
-    }
+
+  crerateInternalItem(name, label, type, tags) {
+    logger.info("Creating internal item \"" + label + "\" on equipment \"" + this.getLabel() + "\"");
+    let item = addItem(name, type, label, new Array(this.getId()), tags );
+    this.dynamic_items.push({ item: item, channel: null });
   }
   
-  removeDynamicItem(item) {
-    logger.info("Removing dynamic item \"" + item.name + "\" on equipment \"" + this.getLabel() + "\"");
+  removeInternalItem(item) {
+    logger.info("Removing internal item \"" + item.name + "\" on equipment \"" + this.getLabel() + "\"");
     removeItem(item.item.name);
   }
 }

@@ -10,12 +10,15 @@ const config = {
   controllerMetadata: "HUEController",
   controllerName: "HUE Controller",
   semanticIdentifierString: "Equipment_Lightbulb",
-  controllerItem: "HUE_Controller_Command"
+  controllerItem: "HUE_Controller_Command",
 }
 
 const requiredItems = {
-  color:       { name: "color",       type: "ColorItem",  class: "Point_Control" },
-  brightness:  { name: "brightness",  type: "DimmerItem", class: "Point_Control" },
+  color:              { name: "color",              type: "ColorItem",  class:    "Point_Control",  property: "Property_Light"             },
+  brightness:         { name: "brightness",         type: "DimmerItem", class:    "Point_Control",  property: "Property_Light"             },
+  colorTemperature:   { name: "colorTemperature",   type: "DimmerItem", class:    "Point_Control",  property: "Property_ColorTemperature"  },
+  scenes:             { name: "scenes",             type: "StringItem", tags:     ["Scenes"],                                              },
+  coordinator:        { name: "coordinator",        type: "StringItem", internal: true                                                     }
 };
 
 class HueController extends EquipmentController {
@@ -25,9 +28,6 @@ class HueController extends EquipmentController {
     
     // Loading all devices
     this.devices = this.loadDevices().map(device => new HueEquipment(device));
-
-    // load metadata settings
-    this.devices.forEach(device => device.loadMetadataSettings(this));
 
     // Identify item trigger event for rules
     var ruleTriggeringItems = new Array();
@@ -56,6 +56,19 @@ class HueController extends EquipmentController {
     cache.put("HUEController", this);
   }
 
+  getCoordinator(device) {
+    if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+      return device;
+    }
+    return this.getEquipment(device.items["coordinator"].state);
+  }
+
+  getZoneMembers(device) {
+    if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+      return new Array(device);
+    }
+    return this.devices.filter(dev => dev.items["coordinator"].state === device.items["coordinator"].state);
+  }
 
   loadDevices() {
     let devices = items.getItems();
@@ -63,9 +76,33 @@ class HueController extends EquipmentController {
   }
 
   onColorChange(event) {
-    // If device has paired devices adapt their light
     let device = this.getEquipmentByItem(event.itemName);
-    device.pairedDevices.forEach(pairedDevice => pairedDevice.setColor(device.getColor()));
+    let coordinator = this.getCoordinator(device)
+    if(device.getId() === coordinator.getId()) {
+      this.getZoneMembers(device).forEach(zone => {
+        if(zone.getId() !== coordinator.getId()) {
+          zone.setColor(coordinator.getColor());
+        }
+      })
+    };
+    if(device.getId() !== coordinator.getId()) {
+      // prevent race condition due to unacurate HSB calculation of openhab
+      var newColor = event.newState.split(",");
+      var groupColor = coordinator.getColor().split(",");
+      var requireUpdate = false;
+      if(parseInt(newColor[0]) !== parseInt(groupColor[0]) && (parseInt(newColor[0])+ 1) !== parseInt(groupColor[0])) {
+        requireUpdate = true;
+      }
+      if(parseInt(newColor[1]) !== parseInt(groupColor[1]) && (parseInt(newColor[1])+ 1) !== parseInt(groupColor[1])) {
+        requireUpdate = true;
+      }
+      if(parseInt(newColor[2]) !== parseInt(groupColor[2])) {
+        requireUpdate = true;
+      }
+      if(requireUpdate) {
+        coordinator.setColor(device.getColor());
+      }
+    }
   }
 
   executeClientCommand(hueClient) {
@@ -85,13 +122,11 @@ class HueController extends EquipmentController {
       case "setBrightness":
         hueClient.getLightBulb().setBrightness(hueClient.getBrightness());
         break;
-      case "pair":
-        hueClient.getPairedDevice().addPairedDevice(hueClient.getLightBulb());
+      case "add":
+        hueClient.getTargetDevice().add(this, hueClient.getLightBulb());
         break;
-      case "unpair":
-        this.devices.forEach(equipment => {
-          equipment.removePairedDevice(hueClient.getLightBulb());
-        });
+      case "remove":
+        hueClient.getLightBulb().remove(this, hueClient.getTurnLightOff());
         break;
       default:
     } 
@@ -104,37 +139,43 @@ class HueController extends EquipmentController {
 class HueEquipment extends Equipment {
   constructor(device) {
     super(device);
-    this.pairedDevices = new Array();
-    this.loadItems(requiredItems);
+    this.loadItems(requiredItems, config.controllerTags);
+
+    // If coordinator item is null set to itself
+    if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
+      this.items["coordinator"].postUpdate(this.getId());
+    }
   };
 
-  loadMetadataSettings(controller) {
-    // loading paired devices from item metadata
-    let pairedDevices = this.getMetadataSettings(config.controllerMetadata, "pairedDevices");
-    if(pairedDevices && Array.isArray(pairedDevices)) {
-      pairedDevices.forEach(device => {
-        this.pairedDevices.push(controller.getEquipment(device.name));
-      });
-    }
-    return this;
-  }
-
-  addPairedDevice(device) {
-    if(!this.pairedDevices.includes(device)) {
-      logger.info(config.controllerName + " is synchronizing light bulb \"" + device.getLabel() + "\" with \"" + this.getLabel() + "\".");
-      this.pairedDevices.push(device);
-      this.setEquipmentSettings(config.controllerMetadata, this.pairedDevices, "pairedDevices");
-      device.setColor(this.getColor());
+  add(controller, device) {
+    let coordinator = controller.getCoordinator(this);
+    if(coordinator !== controller.getCoordinator(device)) {
+      logger.info(config.controllerName + " is synchronizing light bulb \"" + device.getLabel() + "\" with zone coordinator \"" + coordinator.getLabel() + "\".");
+      device.items["coordinator"].postUpdate(coordinator.getId());
+      device.setColor(coordinator.getColor());
     };
     return this;
   }
 
-  removePairedDevice(device) {
-    if(this.pairedDevices.includes(device)) {
-      logger.info(config.controllerName + " is removing light bulb synchronization from \"" + device.getLabel() + "\" to \"" + this.getLabel() + "\".");
-      let pairedDevices = this.pairedDevices.filter(pairedDevice => pairedDevice !== device);
-      this.pairedDevices = pairedDevices;
-      this.setEquipmentSettings(config.controllerMetadata, this.pairedDevices, "pairedDevices");
+  remove(controller, turnLightOff) {
+    if(controller.getCoordinator(this) === this && controller.getZoneMembers(this).length > 1) {
+      var newCoordinator = null;
+      controller.getZoneMembers(this).forEach(zone => {
+        if(zone.getId() !== this.getId()) {
+          if(!newCoordinator) {
+            newCoordinator = zone.getId();
+            logger.info(config.controllerName + " is switching coordinator to \"" + newCoordinator.getLabel() + "\" and removing \"" + this.getLabel() + "\" from zone.");
+          }
+          zone.items["coordinator"].postUpdate(newCoordinator);
+        }
+      })
+    } 
+    else if(controller.getCoordinator(this) !== this) {
+      logger.info(config.controllerName + " is removing light bulb \"" + this.getLabel() + "\" from grouped zone \"" + controller.getCoordinator(this).getLabel() + "\".");
+      this.items["coordinator"].postUpdate(this.getId());
+    }
+    if(turnLightOff) {
+      this.setColor("OFF");
     }
     return this;
   }
@@ -190,11 +231,27 @@ class HueEquipment extends Equipment {
   }
 
   getBrightness() {
-    return parseInt(this.items["brightness"].state);
+    if(this.items["brightness"]) {
+      return parseInt(this.items["brightness"].state);
+    }
+    else {
+      return parseInt(this.items["color"].state.split(",")[2])
+    }
   }
 
   setBrightness(value) {
-    this.items["brightness"].sendCommand(parseInt(value));
+    if(parseInt(value) < 0) {
+      value = 0;
+    }
+    if(parseInt(value) > 100) {
+      value = 100;
+    }
+    if(this.items["brightness"]) {
+      this.items["brightness"].sendCommand(parseInt(value));
+    }
+    else {
+      this.items["color"].sendCommand(parseInt(value));
+    }
     return this;
   }
 }
@@ -205,8 +262,8 @@ var controllerGroupItem = null;
 var controllerItem = null;
 
 scriptLoaded = function () {
-  controllerGroupItem = addItem(config.controllerGroupItem, "Group", "Sonos Controller Group", undefined, config.controllerTags);
-  controllerItem = addItem(config.controllerItem, "String", "Sonos Controller Command Item", new Array(controllerGroupItem.name), config.controllerTags);
+  controllerGroupItem = addItem(config.controllerGroupItem, "Group", "HUE Controller Group", undefined, config.controllerTags);
+  controllerItem = addItem(config.controllerItem, "String", "HUE Controller Command Item", new Array(controllerGroupItem.name), config.controllerTags);
   loadedDate = Date.now();
   controller = new HueController();
 }
