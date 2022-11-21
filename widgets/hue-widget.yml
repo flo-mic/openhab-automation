@@ -1,5 +1,5 @@
 uid: hue_widget
-tags: []
+tags: ["light", "colorlight"]
 props:
   parameters:
     - description: Light bulb label
@@ -31,11 +31,10 @@ props:
       required: false
       type: TEXT
   parameterGroups: []
-timestamp: Nov 20, 2022, 6:24:51 PM
+timestamp: Nov 21, 2022, 7:17:10 PM
 component: f7-card
 config:
   style:
-    maxWidth: 400px
     minWidth: 300px
 slots:
   default:
@@ -108,7 +107,7 @@ slots:
                                   color: var(--f7-block-header-text-color)
                             - component: Label
                               config:
-                                text: '=props.lightTemperatureItem ? "-" : items[props.lightTemperatureItem].state + " K"'
+                                text: '=props.lightTemperatureItem ? items[props.lightTemperatureItem].state + " %" : "-" '
                                 style:
                                   margin-right: 20px
                                   color: var(--f7-block-header-text-color)
@@ -339,7 +338,7 @@ slots:
                     iconOnly: true
                     iconF7: square_grid_3x2
                     iconSize: 17
-                    popoverOpen: .popoverLightMembers
+                    popupOpen: .popupLightMembers
                     style:
                       border: solid 2pt var(--f7-actions-bg-color)
                       border-radius: 50%
@@ -355,13 +354,13 @@ slots:
                       - nextSlide
                   slots:
                     default:
-                      - component: f7-popover
+                      - component: f7-popup
                         config:
                           class:
-                            - popoverLightMembers
-                            - display-flex
+                            - popupLightMembers
+                            - padding-bottom
                           style:
-                            width: "=screen.width < 400 ? '100%' : screen.width < 800 ? '90%' : '80%'"
+                            --f7-popup-tablet-width: '=screen.viewAreaWidth >= 1080 ? "1020px" : screen.viewAreaWidth >= 800 ? "680px" : ""'
                             max-height: 90%
                         slots:
                           default:
@@ -369,12 +368,13 @@ slots:
                               config:
                                 class:
                                   - display-flex
-                                  - flex-direction-column
-                                  - margin-top
+                                  - justify-content-space-around
+                                  - align-items-center
+                                  - padding-bottom
                                 style:
-                                  width: "=screen.width < 400 ? '100%' : screen.width < 800 ? '90%' : '80%'"
-                                  height: "=screen.height < 400 ? '100%' : screen.height < 800 ? '90%' : '80%'"
-                                  top: "=screen.height < 400 ? '0' : screen.height < 800 ? '+100px' : '+100px'"
+                                  flex-flow: row wrap
+                                  overflow-y: auto
+                                  max-height: 100%
                               slots:
                                 default:
                                   - component: oh-repeater
