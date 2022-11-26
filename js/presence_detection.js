@@ -42,9 +42,7 @@ const presenceEvents = [
     turnOffDelay: 30,
     eventItems: [
       { itemName: "Bewegungsmelder_Wohnzimmer_Kueche_Status",       newState: "ON"     },
-      { itemName: "Bewegungsmelder_Wohnzimmer_Kueche_Status",       newState: "OFF"    },
       { itemName: "Bewegungsmelder_Wohnzimmer_Schreibtisch_Status", newState: "ON"     },
-      { itemName: "Bewegungsmelder_Wohnzimmer_Schreibtisch_Status", newState: "OFF"    },
       { itemName: "Tuer_Wohnzimmer_Status",                         newState: "OPEN"   },
       { itemName: "Tuer_Wohnzimmer_Status",                         newState: "CLOSED" }
     ],
@@ -54,8 +52,10 @@ const presenceEvents = [
       doorSensor    = items.getItem('Tuer_Wohnzimmer_Status');
       // if event was triggered by closing door, reset presence sensors for new detection
       if(event && event.itemName === doorSensor.name && event.newState === "CLOSED") {
+        console.log("Initiate Presence reset in Wohnzimmer.");
         items.getItem('Bewegungsmelder_Wohnzimmer_Kueche_Status_Zuruecksetzen').sendCommand("ON");
         items.getItem('Bewegungsmelder_Wohnzimmer_Schreibtisch_Status_Zuruecksetzen').sendCommand("ON");
+        return false;
       }
       // Check for presence
       if(motionSensor1.state === "OFF" && motionSensor2.state === "OFF" && doorSensor.state === "CLOSED") {

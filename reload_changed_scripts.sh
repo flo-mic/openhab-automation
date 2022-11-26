@@ -13,9 +13,6 @@ if test -f "$CONF"; then
     . $CONF
 fi
 
-# Parse last execurion time from config
-RUN_TIME=$(date --date="${LAST_RUN}")
-
 # Get all script files which were modified since last execution time
 echo "Checking for updated script files since \"${LAST_RUN}\""
 MODIFIED_FILES=$(find $SCRIPT_PATH -newermt "${LAST_RUN}" -type f | egrep "[.]js")
@@ -28,5 +25,5 @@ do
 done
 
 # Save new configuration to file system
-CURRENT_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+CURRENT_TIME=$(date -d "$time + 1 seconds" "+%Y-%m-%d %H:%M:%S")
 echo "LAST_RUN=\"${CURRENT_TIME}\"" > $CONF

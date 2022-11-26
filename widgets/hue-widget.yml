@@ -1,5 +1,7 @@
 uid: hue_widget
-tags: ["light", "colorlight"]
+tags:
+  - colorlight
+  - light
 props:
   parameters:
     - description: Light bulb label
@@ -31,13 +33,38 @@ props:
       required: false
       type: TEXT
   parameterGroups: []
-timestamp: Nov 21, 2022, 7:17:10 PM
+timestamp: Nov 26, 2022, 1:05:55 PM
 component: f7-card
 config:
   style:
-    minWidth: 300px
+    minWidth: 290px
 slots:
   default:
+    - component: f7-card-header
+      config:
+        class:
+          - margin-left
+          - margin-right
+        style:
+          height: 20px
+      slots:
+        default:
+          - component: f7-block-header
+            config:
+              class:
+                - no-margin
+              style:
+                position: absolute
+                left: 0px
+                width: 100%
+            slots:
+              default:
+                - component: Label
+                  config:
+                    class:
+                      - no-margin
+                      - text-align-center
+                    text: '=props.label ? props.label : "Light bulb"'
     - component: f7-card-content
       config:
         class:
@@ -46,56 +73,44 @@ slots:
           - justify-content-flex-start
           - align-items-center
         style:
-          height: 175px
-          --f7-color-picker-slider-size: 18px
           --f7-color-picker-slider-knob-size: 22px
+          --f7-color-picker-slider-size: 18px
       slots:
         default:
-          - component: f7-row
-            config:
-              style:
-                position: absolute
-            slots:
-              default:
-                - component: f7-block-header
-                  slots:
-                    default:
-                      - component: Label
-                        config:
-                          text: '=props.label ? props.label : "Light bulb"'
           - component: f7-block
             config:
               class:
-                - margin-top
                 - no-padding
+                - no-margin
+                - display-flex
+                - flex-direction-column
+                - justify-content-space-around
+                - align-items-center
               style:
+                height: 120px
                 width: 100%
-                height: 100%
             slots:
               default:
                 - component: f7-block
                   config:
-                    visible: "=vars.color != true ? true : false"
                     class:
+                      - no-margin
                       - display-flex
                       - flex-direction-column
-                      - justify-content-flex-end
+                      - justify-content-space-around
                     style:
                       animation: f7-circle-circle-in 300ms
                       height: 60%
-                      margin-top: 10px
+                      width: 100%
+                    visible: "=vars.color != true ? true : false"
                   slots:
                     default:
                       - component: f7-row
                         config:
-                          visible: "=props.lightItem ? true : false"
-                          class:
-                            - display-flex
-                            - justify-content-space-between
-                            - align-items-center
                           style:
-                            width: calc(100% + 20px)
                             margin-left: -10px
+                            width: calc(100% + 20px)
+                          visible: "=props.lightItem ? true : false"
                         slots:
                           default:
                             - component: f7-icon
@@ -103,54 +118,46 @@ slots:
                                 f7: thermometer
                                 size: 20
                                 style:
-                                  margin-left: 20px
                                   color: var(--f7-block-header-text-color)
+                                  margin-left: 20px
                             - component: Label
                               config:
-                                text: '=props.lightTemperatureItem ? items[props.lightTemperatureItem].state + " %" : "-" '
                                 style:
-                                  margin-right: 20px
                                   color: var(--f7-block-header-text-color)
+                                  margin-right: 20px
+                                text: '=props.lightTemperatureItem ? items[props.lightTemperatureItem].state + " %" : "-" '
                       - component: f7-row
                         config:
-                          visible: "=props.lightTemperatureItem ? true : false"
-                          class:
-                            - display-flex
-                            - justify-content-center
-                            - align-items-center
                           style:
                             width: 100%
+                          visible: "=props.lightTemperatureItem ? true : false"
                         slots:
                           default:
                             - component: oh-slider
                               config:
                                 color: white
-                                label: true
-                                min: 0
-                                max: 100
                                 item: =props.lightTemperatureItem
+                                label: true
+                                max: 100
+                                min: 0
                                 style:
-                                  margin-top: 7px
-                                  --f7-range-bar-size: 18px
-                                  --f7-range-bar-border-radius: 10px
-                                  --f7-range-knob-size: 20px
                                   --f7-range-bar-active-bg-color: transparent
                                   --f7-range-bar-bg-color: linear-gradient(to right, rgba(215, 226, 255), rgba(255, 255, 255),rgba(255, 147, 44, 0.5),rgba(255, 147, 44, 0))
+                                  --f7-range-bar-border-radius: 10px
+                                  --f7-range-bar-size: 18px
                                   --f7-range-knob-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3)
+                                  --f7-range-knob-size: 20px
                                   --f7-range-label-text-color: black
+                                  margin-top: 7px
                                   width: 100%
                                   z-index: 99 !important
                       - component: f7-row
                         config:
-                          visible: "=props.lightItem ? true : false"
-                          class:
-                            - display-flex
-                            - justify-content-space-between
-                            - align-items-center
                           style:
-                            width: calc(100% + 20px)
                             margin-left: -10px
                             margin-top: 20px
+                            width: calc(100% + 20px)
+                          visible: "=props.lightItem ? true : false"
                         slots:
                           default:
                             - component: f7-icon
@@ -158,386 +165,333 @@ slots:
                                 f7: sun_min
                                 size: 20
                                 style:
-                                  margin-left: 20px
                                   color: var(--f7-block-header-text-color)
+                                  margin-left: 20px
                             - component: Label
                               config:
-                                text: '=props.lightItem ? items[props.lightItem].state.split(",")[2] + " %" : "- %"'
                                 style:
-                                  margin-right: 20px
                                   color: var(--f7-block-header-text-color)
+                                  margin-right: 20px
+                                text: '=props.lightItem ? items[props.lightItem].state.split(",")[2] + " %" : "- %"'
                       - component: f7-row
                         config:
-                          visible: "=props.lightItem ? true : false"
-                          class:
-                            - display-flex
-                            - justify-content-center
-                            - align-items-center
                           style:
-                            width: 100%
                             margin-top: 5px
+                            width: 100%
+                          visible: "=props.lightItem ? true : false"
                         slots:
                           default:
                             - component: oh-slider
                               config:
                                 color: white
-                                label: true
                                 item: =props.lightItem
+                                label: true
                                 style:
-                                  --f7-range-bar-size: 18px
-                                  --f7-range-bar-border-radius: 10px
-                                  --f7-range-knob-size: 20px
                                   --f7-range-bar-active-bg-color: rgba(246,246,0,0.5)
                                   --f7-range-bar-bg-color: linear-gradient(to right, rgba(169,169,169,0.8), rgba(246,158,81,0))
+                                  --f7-range-bar-border-radius: 10px
+                                  --f7-range-bar-size: 18px
                                   --f7-range-knob-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3)
+                                  --f7-range-knob-size: 20px
                                   --f7-range-label-text-color: black
                                   width: 100%
                                   z-index: 99 !important
                 - component: f7-block
                   config:
-                    visible: "=vars.color != true ? false : true"
                     class:
                       - no-margin
+                      - display-flex
+                      - flex-direction-column
+                      - justify-content-space-around
+                      - align-items-center
                     style:
                       animation: f7-circle-circle-in 300ms
+                      width: 100%
+                    visible: "=vars.color != true ? false : true"
                   slots:
                     default:
-                      - component: f7-row
+                      - component: oh-colorpicker
+                        config:
+                          item: =props.lightItem
+                          modules:
+                            - hsb-sliders
+                          style:
+                            --f7-range-bar-active-bg-color: transparent
+                            --f7-range-bar-bg-color: linear-gradient(to right, rgba(246,158,81,0.8), rgba(246,158,81,0))
+                            --f7-range-bar-border-radius: 10px
+                            --f7-range-bar-size: 18px
+                            --f7-range-knob-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3)
+                            --f7-range-knob-size: 20px
+                            --f7-range-label-text-color: black
+                            z-index: 99 !important
+    - component: f7-card-footer
+      config:
+        class:
+          - margin-horizontal
+      slots:
+        default:
+          - component: f7-row
+            config:
+              class:
+                - display-flex
+                - justify-content-space-between
+              style:
+                width: 100%
+            slots:
+              default:
+                - component: f7-card
+                  config:
+                    class:
+                      - display-flex
+                      - justify-content-center
+                      - align-items-center
+                      - no-margin
+                    style:
+                      background: var(--f7-searchbar-search-icon-color)
+                      border-radius: 50%
+                      border-top: none
+                      box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                      height: 40px
+                      width: 40px
+                  slots:
+                    default:
+                      - component: f7-block
+                        config:
+                          class:
+                            - no-margin
+                          style:
+                            background: '=items[props.lightItem].state.split(",")[2] > 0 ? "rgba(0, 255, 0, 0.9)" : "transparent"'
+                            border-radius: 50%
+                            box-shadow: '=items[props.lightItem].state.split(",")[2] > 0 ? "0 0 7px #000, 0px 0px 7px rgba(0,255,0,0.5)" : "none"'
+                            height: 100%
+                            transform: '=items[props.lightItem].state.split(",")[2] > 0 ? "scale(1)" : "scale(0,0)"'
+                            transition: transform 0.2s
+                            width: 100%
+                      - component: oh-link
+                        config:
+                          action: toggle
+                          actionCommand: '=items[props.lightItem].state.split(",")[2] > "0" ? "0" : "100"'
+                          actionItem: =props.lightItem
+                          iconF7: power
+                          iconOnly: true
+                          iconSize: 13
+                          style:
+                            backdrop-filter: opacity(88%)
+                            background-color: var(--f7-actions-bg-color)
+                            border-radius: 50%
+                            box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                            color: "#a7a7a7"
+                            height: calc(100% - 10px)
+                            position: absolute
+                            text-align: center
+                            width: calc(100% - 10px)
+                            z-index: 99 !important
+                - component: f7-card
+                  config:
+                    class:
+                      - no-margin
+                      - display-flex
+                  slots:
+                    default:
+                      - component: f7-card
                         config:
                           class:
                             - display-flex
                             - justify-content-center
-                        slots:
-                          default:
-                            - component: f7-block
-                              config:
-                                style:
-                                  width: 100%
-                              slots:
-                                default:
-                                  - component: oh-colorpicker
-                                    config:
-                                      style:
-                                        margin-top: 7px
-                                        --f7-range-bar-size: 18px
-                                        --f7-range-bar-border-radius: 10px
-                                        --f7-range-knob-size: 20px
-                                        --f7-range-bar-active-bg-color: transparent
-                                        --f7-range-bar-bg-color: linear-gradient(to right, rgba(246,158,81,0.8), rgba(246,158,81,0))
-                                        --f7-range-knob-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3)
-                                        --f7-range-label-text-color: black
-                                        width: 100%
-                                        z-index: 99 !important
-                                      item: =props.lightItem
-                                      modules:
-                                        - hsb-sliders
-          - component: f7-block
-            config:
-              class:
-                - display-flex
-                - justify-content-center
-                - align-items-center
-                - no-padding
-                - no-margin
-              style:
-                position: absolute
-                width: 40px
-                height: 40px
-                left: 30px
-                bottom: 10px
-                border-top: none
-                background: var(--f7-searchbar-search-icon-color)
-                box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
-                border-radius: 50%
-            slots:
-              default:
-                - component: f7-block
-                  config:
-                    class:
-                      - no-margin
-                    style:
-                      position: absolute
-                      width: 100%
-                      height: 100%
-                      box-shadow: '=items[props.lightItem].state.split(",")[2] > 0 ? "0 0 7px #000, 0px 0px 7px rgba(0,255,0,0.5)" : "none"'
-                      border-radius: 50%
-                      transition: transform 0.2s
-                      background: '=items[props.lightItem].state.split(",")[2] > 0 ? "rgba(0, 255, 0, 0.9)" : "transparent"'
-                      transform: '=items[props.lightItem].state.split(",")[2] > 0 ? "scale(1)" : "scale(0,0)"'
-                - component: f7-block
-                  config:
-                    style:
-                      position: absolute
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      border-radius: 50%
-                - component: oh-link
-                  config:
-                    iconOnly: true
-                    iconF7: power
-                    iconSize: 13
-                    action: toggle
-                    actionItem: =props.lightItem
-                    actionCommand: '=items[props.lightItem].state.split(",")[2] > "0" ? "0" : "100"'
-                    class:
-                      - display-flex
-                    style:
-                      position: absolute
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      border-radius: 50%
-                      background-color: var(--f7-actions-bg-color)
-                      color: "#a7a7a7"
-                      text-align: center
-                      backdrop-filter: opacity(88%)
-                      z-index: 99 !important
-                      box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
-          - component: f7-block
-            config:
-              visible: "=props.lightMembers ? true : false"
-              class:
-                - display-flex
-                - justify-content-center
-                - align-items-center
-                - no-padding
-                - no-margin
-              style:
-                position: absolute
-                bottom: 10px
-                right: 130px
-                width: 40px
-                height: 40px
-                border-top: none
-                background: var(--f7-searchbar-search-icon-color)
-                box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
-                border-radius: 50%
-            slots:
-              default:
-                - component: f7-block
-                  config:
-                    class:
-                      - no-margin
-                    style:
-                      position: absolute
-                      width: 100%
-                      height: 100%
-                      border-radius: 50%
-                      transition: transform 0.5s
-                      background: transparent
-                      transform: scale(0,0)
-                - component: f7-block
-                  config:
-                    style:
-                      position: absolute
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      background: var(--f7-actions-bg-color)
-                      border-radius: 50%
-                - component: oh-link
-                  config:
-                    iconOnly: true
-                    iconF7: square_grid_3x2
-                    iconSize: 17
-                    popupOpen: .popupLightMembers
-                    style:
-                      border: solid 2pt var(--f7-actions-bg-color)
-                      border-radius: 50%
-                      background-color: var(--f7-actions-bg-color)
-                      background-image: "linear-gradient(135deg, #f7f7f7: none, #e7e7e7)"
-                      color: "#a7a7a7"
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      text-align: center
-                      box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
-                      backdrop-filter: opacity(88%)
-                    class:
-                      - nextSlide
-                  slots:
-                    default:
-                      - component: f7-popup
-                        config:
-                          class:
-                            - popupLightMembers
-                            - padding-bottom
+                            - align-items-center
+                            - no-margin
+                            - margin-left
                           style:
-                            --f7-popup-tablet-width: '=screen.viewAreaWidth >= 1080 ? "1020px" : screen.viewAreaWidth >= 800 ? "680px" : ""'
-                            max-height: 90%
+                            background: var(--f7-searchbar-search-icon-color)
+                            border-radius: 50%
+                            border-top: none
+                            box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                            height: 40px
+                            width: 40px
+                          visible: "=props.lightMembers ? true : false"
                         slots:
                           default:
                             - component: f7-block
                               config:
                                 class:
-                                  - display-flex
-                                  - justify-content-space-around
-                                  - align-items-center
-                                  - padding-bottom
+                                  - no-margin
                                 style:
-                                  flex-flow: row wrap
-                                  overflow-y: auto
-                                  max-height: 100%
+                                  background: transparent
+                                  border-radius: 50%
+                                  height: 100%
+                                  position: absolute
+                                  transform: scale(0,0)
+                                  transition: transform 0.5s
+                                  width: 100%
+                            - component: oh-link
+                              config:
+                                popupOpen: =".popupLightMember" + props.lightItem
+                                iconF7: lightbulb
+                                iconOnly: true
+                                iconSize: 17
+                                style:
+                                  backdrop-filter: opacity(88%)
+                                  background-color: var(--f7-actions-bg-color)
+                                  border-radius: 50%
+                                  box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                                  color: "#a7a7a7"
+                                  height: calc(100% - 10px)
+                                  position: absolute
+                                  text-align: center
+                                  width: calc(100% - 10px)
+                                  z-index: 99 !important
                               slots:
                                 default:
-                                  - component: oh-repeater
+                                  - component: f7-popup
                                     config:
-                                      for: lightMember
-                                      in: =JSON.parse(props.lightMembers)
-                                      fragment: true
-                                      sourceType: array
+                                      class:
+                                        - ="popupLightMember" + props.lightItem
+                                        - padding-bottom
+                                      style:
+                                        --f7-popup-tablet-width: '=screen.viewAreaWidth >= 1080 ? "965px" : screen.viewAreaWidth >= 800 ? "655px" : ""'
                                     slots:
                                       default:
-                                        - component: widget:hue_widget
+                                        - component: f7-block
                                           config:
-                                            label: =loop.lightMember[0]
-                                            lightItem: =loop.lightMember[1]
-                                            lightTemperatureItem: =loop.lightMember[2]
-          - component: f7-block
-            config:
-              visible: "=props.lightScenesItem ? true : false"
-              class:
-                - display-flex
-                - justify-content-center
-                - align-items-center
-                - no-padding
-                - no-margin
-              style:
-                position: absolute
-                bottom: 10px
-                right: 80px
-                width: 40px
-                height: 40px
-                border-top: none
-                background: var(--f7-searchbar-search-icon-color)
-                box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
-                border-radius: 50%
-            slots:
-              default:
-                - component: f7-block
-                  config:
-                    class:
-                      - no-margin
-                    style:
-                      position: absolute
-                      width: 100%
-                      height: 100%
-                      border-radius: 50%
-                      transition: transform 0.5s
-                      background: transparent
-                      transform: scale(0,0)
-                - component: f7-block
-                  config:
-                    style:
-                      position: absolute
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      background: var(--f7-actions-bg-color)
-                      border-radius: 50%
-                - component: oh-link
-                  config:
-                    iconOnly: true
-                    iconF7: square_favorites
-                    iconSize: 17
-                    action: options
-                    actionItem: =props.lightScenesItem
-                    style:
-                      border: solid 2pt var(--f7-actions-bg-color)
-                      border-radius: 50%
-                      background-color: var(--f7-actions-bg-color)
-                      background-image: "linear-gradient(135deg, #f7f7f7: none, #e7e7e7)"
-                      color: "#a7a7a7"
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      text-align: center
-                      box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
-                      backdrop-filter: opacity(88%)
-                    class:
-                      - nextSlide
-          - component: f7-block
-            config:
-              visible: "=props.lightItem ? true : false"
-              class:
-                - display-flex
-                - justify-content-center
-                - align-items-center
-                - no-padding
-                - no-margin
-              style:
-                position: absolute
-                bottom: 10px
-                right: 30px
-                width: 40px
-                height: 40px
-                border-top: none
-                background: var(--f7-searchbar-search-icon-color)
-                box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
-                border-radius: 50%
-            slots:
-              default:
-                - component: f7-block
-                  config:
-                    class:
-                      - no-margin
-                    style:
-                      position: absolute
-                      width: 100%
-                      height: 100%
-                      box-shadow: '=vars.color == true ? "rgb(0 0 0) 0px 0px 4px, rgb(255 0 0 / 50%) -1px -1px 4px, rgb(255 255 0 / 50%) 1px -1px 4px, rgb(0 255 0 / 50%) 1px 1px 4px, rgb(0 0 255 / 50%) -1px 1px 4px" : "none"'
-                      border-radius: 50%
-                      transition: transform 0.5s
-                      background: '=vars.color == true ? "linear-gradient(135deg, red, red, orange, yellow, green, blue, blue)" : "transparent"'
-                      transform: '=vars.color == true ? "rotate(360deg) scale(1,1)" : "rotate(0deg) scale(0,0)"'
-                - component: f7-block
-                  config:
-                    style:
-                      position: absolute
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      background: var(--f7-actions-bg-color)
-                      border-radius: 50%
-                - component: oh-link
-                  config:
-                    iconOnly: true
-                    iconF7: paintbrush
-                    iconSize: 17
-                    action: variable
-                    actionVariable: color
-                    actionVariableValue: true
-                    style:
-                      display: '=(vars.color == false || vars.color != true) ? "block" : "none"'
-                      border: solid 2pt var(--f7-actions-bg-color)
-                      border-radius: 50%
-                      background-color: var(--f7-actions-bg-color)
-                      background-image: "linear-gradient(135deg, #f7f7f7: none, #e7e7e7)"
-                      color: "#a7a7a7"
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      text-align: center
-                      box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
-                      backdrop-filter: opacity(88%)
-                    class:
-                      - nextSlide
-                - component: oh-link
-                  config:
-                    iconOnly: true
-                    iconF7: paintbrush_fill
-                    iconSize: 17
-                    action: variable
-                    actionVariable: color
-                    actionVariableValue: false
-                    style:
-                      display: '=(vars.color) ? "block" : "none"'
-                      border: solid 2pt var(--f7-actions-bg-color)
-                      border-radius: 50%
-                      background-color: var(--f7-actions-bg-color)
-                      color: "#a7a7a7"
-                      width: calc(100% - 10px)
-                      height: calc(100% - 10px)
-                      text-align: center
-                      backdrop-filter: opacity(88%)
-                    class:
-                      - previousSlide
-    - component: f7-card-footer
-      slots:
-        default:
-          - component: Label
-            config:
-              text: '=props.lightItem ? items[props.lightItem].state.split(",")[2] > 0 ? "Licht an" : "Licht aus" : "Licht aus"'
+                                            class:
+                                              - display-flex
+                                              - =screen.viewAreaWidth <= 400 ? justify-content-space-around : justify-content-start-left
+                                              - align-items-center
+                                            style:
+                                              flex-flow: row wrap
+                                              max-height: 90%
+                                              overflow-y: auto
+                                          slots:
+                                            default:
+                                              - component: oh-repeater
+                                                config:
+                                                  for: lightMember
+                                                  fragment: true
+                                                  in: =JSON.parse(props.lightMembers)
+                                                  sourceType: array
+                                                slots:
+                                                  default:
+                                                    - component: widget:hue_widget
+                                                      config:
+                                                        label: =loop.lightMember[0]
+                                                        lightItem: =loop.lightMember[1]
+                                                        lightTemperatureItem: =loop.lightMember[2]
+                                        - component: f7-block
+                                          config:
+                                            class:
+                                              - display-flex
+                                              - justify-content-space-around
+                                              - align-items-center
+                                              - padding-bottom
+                                            style:
+                                              position: relative
+                                              top: -15px
+                                          slots:
+                                            default:
+                                              - component: oh-button
+                                                config:
+                                                  popupClose: =".popupLightMember" + props.lightItem
+                                                  style:
+                                                    max-width: 100px
+                                                  text: Close
+                      - component: f7-card
+                        config:
+                          class:
+                            - display-flex
+                            - justify-content-center
+                            - align-items-center
+                            - no-margin
+                            - margin-left
+                          style:
+                            background: var(--f7-searchbar-search-icon-color)
+                            border-radius: 50%
+                            border-top: none
+                            box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                            height: 40px
+                            width: 40px
+                          visible: "=props.lightScenesItem ? true : false"
+                        slots:
+                          default:
+                            - component: f7-block
+                              config:
+                                class:
+                                  - no-margin
+                                style:
+                                  background: transparent
+                                  border-radius: 50%
+                                  box-shadow: none
+                                  height: 100%
+                                  transform: scale(0,0)
+                                  transition: transform 0.2s
+                                  width: 100%
+                            - component: oh-link
+                              config:
+                                action: options
+                                actionItem: =props.lightScenesItem
+                                iconF7: square_favorites
+                                iconOnly: true
+                                iconSize: 17
+                                style:
+                                  backdrop-filter: opacity(88%)
+                                  background-color: var(--f7-actions-bg-color)
+                                  background-image: "linear-gradient(135deg, #f7f7f7: none, #e7e7e7)"
+                                  border: solid 2pt var(--f7-actions-bg-color)
+                                  border-radius: 50%
+                                  box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                                  color: "#a7a7a7"
+                                  height: calc(100% - 10px)
+                                  position: absolute
+                                  text-align: center
+                                  width: calc(100% - 10px)
+                                  z-index: 99 !important
+                      - component: f7-card
+                        config:
+                          class:
+                            - display-flex
+                            - justify-content-center
+                            - align-items-center
+                            - no-margin
+                            - margin-left
+                          style:
+                            background: var(--f7-searchbar-search-icon-color)
+                            border-radius: 50%
+                            border-top: none
+                            box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                            height: 40px
+                            width: 40px
+                          visible: "=props.lightItem ? true : false"
+                        slots:
+                          default:
+                            - component: f7-block
+                              config:
+                                class:
+                                  - no-margin
+                                style:
+                                  background: '=vars.color == true ? "linear-gradient(135deg, red, red, orange, yellow, green, blue, blue)" : "transparent"'
+                                  border-radius: 50%
+                                  box-shadow: '=vars.color == true ? "rgb(0 0 0) 0px 0px 4px, rgb(255 0 0 / 50%) -1px -1px 4px, rgb(255 255 0 / 50%) 1px -1px 4px, rgb(0 255 0 / 50%) 1px 1px 4px, rgb(0 0 255 / 50%) -1px 1px 4px" : "none"'
+                                  height: 100%
+                                  transform: '=vars.color == true ? "rotate(360deg) scale(1,1)" : "rotate(0deg) scale(0,0)"'
+                                  transition: transform 0.5s
+                                  width: 100%
+                            - component: oh-link
+                              config:
+                                action: variable
+                                actionVariable: color
+                                actionVariableValue: "=vars.color == true ? false : true"
+                                iconF7: paintbrush
+                                iconOnly: true
+                                iconSize: 17
+                                style:
+                                  backdrop-filter: opacity(88%)
+                                  background-color: var(--f7-actions-bg-color)
+                                  background-image: "linear-gradient(135deg, #f7f7f7: none, #e7e7e7)"
+                                  border: solid 2pt var(--f7-actions-bg-color)
+                                  border-radius: 50%
+                                  box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                                  color: "#a7a7a7"
+                                  height: calc(100% - 10px)
+                                  position: absolute
+                                  text-align: center
+                                  width: calc(100% - 10px)
+                                  z-index: 99 !important
