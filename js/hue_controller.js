@@ -1,4 +1,4 @@
-load('/openhab/conf/automation/js/classes/equipment.js');
+load('/openhab/conf/automation/js/classes/model.js');
 load('/openhab/conf/automation/js/helpers/items.js');
 load('/openhab/conf/automation/js/helpers/timer.js');
 
@@ -34,7 +34,7 @@ class HueController extends EquipmentController {
     ruleTriggeringItems.push(triggers.ItemCommandTrigger(config.controllerItem))
     this.devices.forEach(device => {
       if(device.items["color"]) {
-        ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["color"].name));
+        ruleTriggeringItems.push(triggers.ItemStateChangeTrigger(device.items["color"].getId()));
       }
     });
 
@@ -57,17 +57,17 @@ class HueController extends EquipmentController {
   }
 
   getCoordinator(device) {
-    if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+    if(device.items["coordinator"].getState() === "NULL" || device.items["coordinator"].getState() === null) {
       return device;
     }
-    return this.getEquipment(device.items["coordinator"].state);
+    return this.getEquipment(device.items["coordinator"].getState());
   }
 
   getZoneMembers(device) {
-    if(device.items["coordinator"].state === "NULL" || device.items["coordinator"].state === null) {
+    if(device.items["coordinator"].getState() === "NULL" || device.items["coordinator"].getState() === null) {
       return new Array(device);
     }
-    return this.devices.filter(dev => dev.items["coordinator"].state === device.items["coordinator"].state);
+    return this.devices.filter(dev => dev.items["coordinator"].getState() === device.items["coordinator"].getState());
   }
 
   loadDevices() {
@@ -140,9 +140,10 @@ class HueEquipment extends Equipment {
   constructor(device) {
     super(device);
     this.loadItems(requiredItems, config.controllerTags);
+    logger.info("New equipment \""+this.label+"\" initiated.");
 
     // If coordinator item is null set to itself
-    if(this.items["coordinator"].state === "NULL" || this.items["coordinator"].state === null) {
+    if(this.items["coordinator"].getState() === "NULL" || this.items["coordinator"].getState() === null) {
       this.items["coordinator"].postUpdate(this.getId());
     }
   };
@@ -181,7 +182,7 @@ class HueEquipment extends Equipment {
   }
 
   getColor() {
-    return this.items["color"].state;
+    return this.items["color"].getState();
   }
 
   setColor(color) {
@@ -232,10 +233,10 @@ class HueEquipment extends Equipment {
 
   getBrightness() {
     if(this.items["brightness"]) {
-      return parseInt(this.items["brightness"].state);
+      return parseInt(this.items["brightness"].getState());
     }
     else {
-      return parseInt(this.items["color"].state.split(",")[2])
+      return parseInt(this.items["color"].getState().split(",")[2])
     }
   }
 

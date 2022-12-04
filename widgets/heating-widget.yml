@@ -1,0 +1,714 @@
+uid: heating_widget
+tags:
+  - heating
+  - temperature
+props:
+  parameters:
+    - default: Heating Widget
+      description: Heating label
+      label: Heating label
+      name: label
+      required: false
+      type: TEXT
+    - context: item
+      default: Heizung_Wohnzimmer_IstTemperatur
+      description: Item which holds the current temperature value
+      label: Current temperature
+      name: currentTemperature
+      required: false
+      type: TEXT
+    - context: item
+      default: Heizung_Wohnzimmer_Feuchtigkeit
+      description: Item which holds the current humidity value
+      label: Current humidity
+      name: humidity
+      required: false
+      type: TEXT
+    - context: item
+      default: Heizung_Wohnzimmer_SollTemperatur
+      description: Item which controls the setpoint value of the heating
+      label: SetPoint temperature item
+      name: setTemperature
+      required: false
+      type: TEXT
+    - context: item
+      description: Windows which belong to this room
+      label: Windows in room
+      name: windows
+      required: false
+      type: TEXT
+      multiple: true
+    - context: item
+      default: Heizung_Wohnzimmer_Modus
+      description: Item which holds the heating mode options
+      label: Heating mode item
+      name: mode
+      required: false
+      type: TEXT
+    - default: Wochentag
+      description: Label for the caption of weekday
+      label: Weekday label
+      name: labelWeekDay
+      required: false
+      type: TEXT
+    - default: Zeit
+      description: Label for the caption of time
+      label: Time label
+      name: labelTime
+      required: false
+      type: TEXT
+    - default: Temperatur
+      description: Label for the caption of temperature
+      label: Temperature label
+      name: labelTemperature
+      required: false
+      type: TEXT
+    - context: item
+      default: Heizung_Wohnzimmer_Schedule
+      description: Item which holds the heating schedule settings
+      label: Heating schedule item
+      name: heatingSchedule
+      required: false
+      type: TEXT
+    - default: "12"
+      description: Defines the minimum allowed temperature
+      label: Minimum temperature
+      name: minTemperature
+      required: false
+      type: DECIMAL
+    - default: "25"
+      description: Defines the maximum allowed temperature
+      label: Maximum temperature
+      name: maxTemperature
+      required: false
+      type: DECIMAL
+    - default: "0.5"
+      description: Interval to use for increase, decrease
+      label: Temperature steps on change
+      name: temperatureSteps
+      required: false
+      type: DECIMAL
+  parameterGroups: []
+timestamp: Nov 30, 2022, 4:07:18 PM
+component: f7-card
+config:
+  style:
+    minWidth: 290px
+slots:
+  default:
+    - component: f7-card-header
+      config:
+        class:
+          - margin-left
+          - margin-right
+        style:
+          height: 20px
+      slots:
+        default:
+          - component: f7-block-header
+            config:
+              class:
+                - no-margin
+              style:
+                left: 0px
+                position: absolute
+                width: 100%
+            slots:
+              default:
+                - component: Label
+                  config:
+                    class:
+                      - no-margin
+                      - text-align-center
+                    text: =props.label
+    - component: f7-card-content
+      config:
+        class:
+          - display-flex
+          - flex-direction-column
+          - justify-content-flex-start
+          - align-items-center
+        style:
+          --f7-color-picker-slider-knob-size: 22px
+          --f7-color-picker-slider-size: 18px
+      slots:
+        default:
+          - component: f7-block
+            config:
+              class:
+                - no-padding
+                - no-margin
+                - display-flex
+                - flex-direction-row
+                - justify-content-space-between
+                - align-items-center
+              style:
+                position: absolute
+                top: calc(5px - (var(--f7-card-content-padding-vertical)/2)
+                height: 40px
+                width: 100%
+            slots:
+              default:
+                - component: oh-button
+                  config:
+                    style:
+                      --f7-button-text-color: '=Number.parseFloat(items[props.currentTemperature].state)+0.5 < Number.parseFloat(items[props.setTemperature].state) ? "rgb(26,133,226)" : Number.parseFloat(items[props.currentTemperature].state)-0.5 > Number.parseFloat(items[props.setTemperature].state) ? "rgb(230, 74, 25)" : "rgba(0, 255, 0, 0.9)"'
+                    text: "=items[props.currentTemperature].displayState ? items[props.currentTemperature].displayState : items[props.currentTemperature].state"
+                    iconF7: thermometer
+                    iconSize: 24px
+                    actionAnalyzerChartType: isoWeek
+                    actionAnalyzerItems: =props.currentTemperature
+                    action: analyzer
+                - component: oh-button
+                  config:
+                    class:
+                      - padding-right
+                    style:
+                      --f7-button-text-color: rgb(26,133,226)
+                    text: "=items[props.humidity].displayState ? items[props.humidity].displayState : items[props.humidity].state"
+                    iconF7: drop
+                    iconSize: 24px
+                    actionAnalyzerChartType: isoWeek
+                    actionAnalyzerItems: =props.humidity
+                    action: analyzer
+          - component: f7-block
+            config:
+              class:
+                - no-padding
+                - no-margin
+                - display-flex
+                - flex-direction-row
+                - justify-content-space-between
+                - align-items-center
+              style:
+                position: absolute
+                bottom: calc(10px - (var(--f7-card-content-padding-vertical)/2)
+                height: 40px
+                width: 100%
+            slots:
+              default:
+                - component: f7-card
+                  slots:
+                    default:
+                      - component: oh-icon
+                        config:
+                          bgColor: green
+                          class:
+                            - padding-left
+                          state: '=(props.windows.filter(window => items[window].state === "OPEN")).length > 0 ? "OPEN" : "CLOSED"'
+                          style:
+                            height: 50px
+                          icon: window
+                          visible: '=props.windows ? "true" : "false"'
+                - component: oh-button
+                  config:
+                    class:
+                      - display-flex
+                      - align-items-center
+                      - no-padding
+                      - no-margin
+                    style:
+                      --f7-button-text-color: var(--f7-block-header-text-color)
+                      right: +20px
+                      background: var(--f7-searchbar-search-icon-color)
+                      backdrop-filter: opacity(88%)
+                      border-radius: 70%
+                      border-top: none
+                      box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                      height: 40px
+                      width: 40px
+                    iconF7: gear
+                    iconSize: 30px
+                    action: variable
+                    actionVariable: heatingSchedule
+                    actionVariableValue: =JSON.parse(items[props.heatingSchedule].state)
+                    popupOpen: =".popupHeatingSettings" + props.heatingSchedule
+                    visible: '=props.heatingSchedule ? "true" : "false"'
+                  slots:
+                    default:
+                      - component: f7-popup
+                        config:
+                          class:
+                            - ="popupHeatingSettings" + props.heatingSchedule
+                        slots:
+                          default:
+                            - component: f7-block
+                              config:
+                                class:
+                                  - align-items-center
+                                style:
+                                  flex-flow: row wrap
+                                  max-height: 90%
+                                  width: 100%
+                                  overflow-y: auto
+                              slots:
+                                default:
+                                  - component: f7-card-header
+                                    config:
+                                      style:
+                                        width: 100%
+                                    slots:
+                                      default:
+                                        - component: f7-block-header
+                                          config:
+                                            class:
+                                              - no-margin
+                                              - no-padding
+                                              - display-flex
+                                              - flex-direction-row
+                                              - justify-content-space-around
+                                              - align-items-center
+                                            style:
+                                              width: 100%
+                                              color: var(--f7-card-text-color)
+                                          slots:
+                                            default:
+                                              - component: Label
+                                                config:
+                                                  class:
+                                                    - no-margin
+                                                    - margin-left
+                                                    - text-align-center
+                                                  text: =props.labelWeekDay
+                                              - component: oh-button
+                                                config:
+                                                  class:
+                                                    - no-margin
+                                                    - margin-right
+                                                    - text-align-center
+                                                  style:
+                                                    --f7-button-text-color: var(--f7-block-header-text-color)
+                                                    --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                                    min-width: 100px
+                                                  outline: true
+                                                  text: '=vars.weekdayIdx || vars.weekdayIdx == 0 ? vars.heatingSchedule[vars.weekdayIdx].day : "Please choose..."'
+                                                  popoverOpen: .popoverWeekday
+                                                slots:
+                                                  default:
+                                                    - component: f7-popover
+                                                      config:
+                                                        class: popoverWeekday
+                                                        style:
+                                                          z-index: 99999 !important
+                                                      slots:
+                                                        default:
+                                                          - component: oh-repeater
+                                                            config:
+                                                              for: availableDays
+                                                              fragment: true
+                                                              in: '=vars.heatingSchedule ? vars.heatingSchedule : JSON.parse("[{\"day\":\"1\",\"times\":[]}]")'
+                                                              sourceType: array
+                                                            slots:
+                                                              default:
+                                                                - component: oh-button
+                                                                  config:
+                                                                    class:
+                                                                      - text-align-center
+                                                                      - margin-vertical
+                                                                    text: =loop.availableDays.day
+                                                                    action: variable
+                                                                    actionVariable: weekdayIdx
+                                                                    actionVariableValue: =loop.availableDays_idx
+                                                                    popoverClose: =".popoverWeekday"
+                                                                    style:
+                                                                      --f7-button-text-color: var(--f7-block-header-text-color)
+                                                                      --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                  - component: f7-block
+                                    slots:
+                                      default:
+                                      - component: oh-repeater
+                                        config:
+                                          for: time
+                                          rangeStart: 1
+                                          rangeStop: '=vars.heatingSchedule && vars.heatingSchedule[vars.weekdayIdx] && vars.heatingSchedule[vars.weekdayIdx].times ? vars.heatingSchedule[vars.weekdayIdx].times.length + 1 : JSON.parse("[{\"day\":\"1\",\"times\":[]}]")[0].times.length + 1'
+                                          rangeStep: 1
+                                          fragment: true
+                                          sourceType: range
+                                        slots:
+                                          default:
+                                            - component: f7-row
+                                              config:
+                                                class:
+                                                  - no-margin
+                                                  - margin-horizontal
+                                                  - display-flex
+                                                  - flex-direction-row
+                                                  - justify-content-space-around
+                                                  - align-items-center
+                                                visible: '=loop.time_idx <= vars["heatingSchedule"][vars.weekdayIdx].times.length ? true : false'
+                                              slots:
+                                                default:
+                                                  - component: f7-block
+                                                    config:
+                                                      class:
+                                                        - display-flex
+                                                        - flex-direction-row
+                                                        - align-items-center
+                                                        - no-margin
+                                                        - no-padding
+                                                    slots:
+                                                      default:
+                                                        - component: Label
+                                                          config:
+                                                            class:
+                                                              - margin-horizontal
+                                                              - text-align-center
+                                                            text: =props.labelTime
+                                                        - component: oh-button
+                                                          config:
+                                                            text: '=vars.heatingSchedule && vars.heatingSchedule[vars.weekdayIdx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time ? vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time : "--:--"'
+                                                            style:
+                                                              --f7-button-text-color: var(--f7-block-header-text-color)
+                                                              --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                                              width: 60px
+                                                            popoverOpen: =".popoverTime" + loop.time_idx
+                                                          slots:
+                                                            default:
+                                                              - component: f7-popover
+                                                                config:
+                                                                  class:
+                                                                    - ="popoverTime" + loop.time_idx
+                                                                  style:
+                                                                    z-index: 99999 !important
+                                                                    overflow: none
+                                                                    width: 120px
+                                                                    height: 250px
+                                                                slots:
+                                                                  default:
+                                                                    - component: f7-block
+                                                                      config:
+                                                                        class:
+                                                                          - display-flex
+                                                                          - flex-direction-row
+                                                                          - no-margin
+                                                                          - no-padding
+                                                                      slots:
+                                                                        default:
+                                                                          - component: f7-block
+                                                                            config:
+                                                                              class:
+                                                                                - no-margin
+                                                                                - margin-horizontal
+                                                                                - no-padding
+                                                                              style:
+                                                                                position: fixed
+                                                                                top: 0px
+                                                                                left: 0px
+                                                                                height: 250px
+                                                                                overflow-y: auto
+                                                                                -ms-overflow-style: none
+                                                                                scrollbar-width: none
+                                                                              stylesheet: >
+                                                                                ::-webkit-scrollbar {
+                                                                                  display: none;
+                                                                                }
+                                                                            slots:
+                                                                              default:
+                                                                                - component: oh-repeater
+                                                                                  config:
+                                                                                    for: hour
+                                                                                    rangeStart: 0
+                                                                                    rangeStop: 23
+                                                                                    rangeStep: 1
+                                                                                    fragment: true
+                                                                                    sourceType: range
+                                                                                  slots:
+                                                                                    default:
+                                                                                      - component: oh-button
+                                                                                        config:
+                                                                                          class:
+                                                                                            - text-align-center
+                                                                                            - margin-vertical
+                                                                                          text: '=loop.hour === 0 ? "0" : loop.hour'
+                                                                                          action: variable
+                                                                                          actionVariable: heatingSchedule
+                                                                                          actionVariableValue: '=vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time ? vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time.replace(vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time.split(":")[0] + ":", loop.hour + ":") : loop.hour + ":00"'
+                                                                                          actionVariableKey: ="[" + vars.weekdayIdx + "].times[" + loop.time_idx + "].time"
+                                                                                          style:
+                                                                                            --f7-button-text-color: var(--f7-block-header-text-color)
+                                                                                            --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                                                          - component: f7-block
+                                                                            config:
+                                                                              class:
+                                                                                - no-margin
+                                                                                - margin-horizontal
+                                                                                - no-padding
+                                                                              style:
+                                                                                position: fixed
+                                                                                top: 0px
+                                                                                right: 0px
+                                                                                height: 250px
+                                                                                overflow-y: auto
+                                                                                -ms-overflow-style: none
+                                                                                scrollbar-width: none
+                                                                              stylesheet: >
+                                                                                ::-webkit-scrollbar {
+                                                                                  display: none;
+                                                                                }
+                                                                            slots:
+                                                                              default:
+                                                                                - component: oh-repeater
+                                                                                  config:
+                                                                                    for: minute
+                                                                                    rangeStart: 0
+                                                                                    rangeStop: 59
+                                                                                    rangeStep: 5
+                                                                                    fragment: true
+                                                                                    sourceType: range
+                                                                                  slots:
+                                                                                    default:
+                                                                                      - component: oh-button
+                                                                                        config:
+                                                                                          class:
+                                                                                            - text-align-center
+                                                                                            - margin-vertical
+                                                                                          text: '=loop.minute === 0 ? "0" : loop.minute'
+                                                                                          action: variable
+                                                                                          actionVariable: heatingSchedule
+                                                                                          actionVariableValue: '=vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time ? vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time.replace(":" + vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].time.split(":")[1], loop.minute < 10 ? ":0" + loop.minute : ":" + loop.minute) : loop.minute < 10 ? "00:0" + loop.minute : "00:" + loop.minute'
+                                                                                          actionVariableKey: ="[" + vars.weekdayIdx + "].times[" + loop.time_idx + "].time"
+                                                                                          popoverClose: =".popoverTime" + loop.time_idx
+                                                                                          style:
+                                                                                            --f7-button-text-color: var(--f7-block-header-text-color)
+                                                                                            --f7-button-outline-border-color: var(--f7-
+                                                  - component: f7-block
+                                                    config:
+                                                      class:
+                                                        - display-flex
+                                                        - flex-direction-row
+                                                        - align-items-center
+                                                        - no-margin
+                                                        - no-padding
+                                                    slots:
+                                                      default:
+                                                        - component: Label
+                                                          config:
+                                                            class:
+                                                              - margin-horizontal
+                                                              - text-align-center
+                                                            text: =props.labelTemperature
+                                                        - component: oh-button
+                                                          config:
+                                                            text: '=vars.heatingSchedule && vars.heatingSchedule[vars.weekdayIdx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx] && vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].value ? vars.heatingSchedule[vars.weekdayIdx].times[loop.time_idx].value + " °C" : "- °C"'
+                                                            style:
+                                                              --f7-button-text-color: var(--f7-block-header-text-color)
+                                                              --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                                              width: 60px
+                                                              text-align: right
+                                                            popoverOpen: =".popoverTemperature" + loop.time_idx
+                                                          slots:
+                                                            default:
+                                                              - component: f7-popover
+                                                                config:
+                                                                  class:
+                                                                    - ="popoverTemperature" + loop.time_idx
+                                                                  style:
+                                                                    z-index: 99999 !important
+                                                                    overflow: none
+                                                                    width: 100px
+                                                                    height: 250px
+                                                                slots:
+                                                                  default:
+                                                                    - component: f7-block
+                                                                      config:
+                                                                        class:
+                                                                          - no-margin
+                                                                          - margin-horizontal
+                                                                          - no-padding
+                                                                        style:
+                                                                          height: 250px
+                                                                          overflow-y: auto
+                                                                          -ms-overflow-style: none
+                                                                          scrollbar-width: none
+                                                                        stylesheet: >
+                                                                          ::-webkit-scrollbar {
+                                                                            display: none;
+                                                                          }
+                                                                      slots:
+                                                                        default:
+                                                                          - component: oh-repeater
+                                                                            config:
+                                                                              for: temperature
+                                                                              rangeStart: =Number.parseInt(props.minTemperature*10)
+                                                                              rangeStop: =Number.parseInt(props.maxTemperature*10)
+                                                                              rangeStep: =Number.parseInt(props.temperatureSteps*10)
+                                                                              fragment: true
+                                                                              sourceType: range
+                                                                            slots:
+                                                                              default:
+                                                                                - component: oh-button
+                                                                                  config:
+                                                                                    class:
+                                                                                      - text-align-center
+                                                                                      - margin-vertical
+                                                                                    text: =loop.temperature/10 + " °C"
+                                                                                    action: variable
+                                                                                    actionVariable: heatingSchedule
+                                                                                    actionVariableValue: =loop.temperature/10
+                                                                                    actionVariableKey: ="[" + vars.weekdayIdx + "].times[" + loop.time_idx + "].value"
+                                                                                    popoverClose: =".popoverTemperature" + loop.time_idx
+                                                                                    style:
+                                                                                      --f7-button-text-color: var(--f7-block-header-text-color)
+                                                                                      --f7-button-outline-border-color: var(--f7-block-header-text-color)
+                                                        - component: div
+                                                          config:
+                                                            class:
+                                                              - align-items-center
+                                                            style:
+                                                              width: 40px
+                                                          slots:
+                                                            default:
+                                                              - component: oh-button
+                                                                config:
+                                                                  visible: "=loop.time_idx < vars.heatingSchedule[vars.weekdayIdx].times.length ? true : false"
+                                                                  iconF7: trash
+                                                                  action: variable
+                                                                  actionVariable: heatingSchedule
+                                                                  actionVariableValue: undefined
+                                                                  actionVariableKey: ="[" + vars.weekdayIdx + "].times[" + loop.time_idx + "]"
+                                                                  style:
+                                                                    --f7-button-text-color: var(--f7-block-header-text-color)
+                                                                    --f7-button-outline-border-color: var(--f7-block-header-text-color)
+
+                            - component: f7-block
+                              config:
+                                class:
+                                  - display-flex
+                                  - flex-direction-row
+                                  - justify-content-space-around
+                                  - align-items-center
+                                  - padding-bottom
+                                style:
+                                  position: relative
+                                  top: -15px
+                              slots:
+                                default:
+                                  - component: f7-block
+                                    config:
+                                      class:
+                                        - display-flex
+                                        - flex-direction-row
+                                    slots:
+                                      default:
+                                        - component: oh-button
+                                          config:
+                                            popupClose: =".popupHeatingSettings" + props.heatingSchedule
+                                            outline: true
+                                            style:
+                                              max-width: 100px
+                                            text: Close
+                                        - component: f7-block
+                                          config:
+                                            style:
+                                              width: 20px
+                                            text: Close
+                                        - component: oh-button
+                                          config:
+                                            actionCommand: =JSON.stringify(vars.heatingSchedule)
+                                            action: command
+                                            actionItem: =props.heatingSchedule
+                                            popupClose: =".popupHeatingSettings" + props.heatingSchedule
+                                            outline: true
+                                            color: green
+                                            style:
+                                              max-width: 100px
+                                            text: Update
+                                            visible: '=(vars.weekdayIdx || vars.weekdayIdx == 0) && vars.heatingSchedule ? "true" : "false"'
+          - component: f7-block
+            config:
+              class:
+                - no-padding
+                - no-margin
+                - display-flex
+                - flex-direction-column
+                - justify-content-space-around
+                - align-items-center
+              style:
+                height: 120px
+                width: 100%
+            slots:
+              default:
+                - component: oh-trend
+                  config:
+                    style:
+                      height: calc(100%)
+                      width: calc(100%)
+                    trendItem: Heizung_Wohnzimmer_IstTemperatur
+    - component: f7-card-footer
+      config:
+        class:
+          - margin-horizontal
+      slots:
+        default:
+          - component: f7-row
+            config:
+              class:
+                - display-flex
+                - justify-content-space-between
+              style:
+                width: 100%
+            slots:
+              default:
+                - component: f7-card
+                  config:
+                    class:
+                      - display-flex
+                      - justify-content-center
+                      - align-items-center
+                      - no-margin
+                    style:
+                      background: '=items[props.mode].state === "Auto" ? "rgba(0, 255, 0, 0.9)" : items[props.mode].state === "Manual" ? "rgba(247,208,0,1.00)" : items[props.mode].state === "Boost" ? "rgb(230, 74, 25)" : "var(--f7-searchbar-search-icon-color)"'
+                      border-radius: 10%
+                      border-top: none
+                      box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                      height: 40px
+                    visible: '=props.mode ? "true" : "false"'
+                  slots:
+                    default:
+                      - component: oh-button
+                        config:
+                          action: options
+                          actionItem: =props.mode
+                          raised: true
+                          style:
+                            --f7-button-text-color: '=items[props.mode].state === "Auto" ? "rgba(0, 255, 0, 0.9)" : items[props.mode].state === "Manual" ? "rgba(247,208,0,1.00)" : items[props.mode].state === "Boost" ? "rgb(230, 74, 25)" : ""'
+                            backdrop-filter: opacity(88%)
+                            background-color: var(--f7-actions-bg-color)
+                            box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                            height: calc(100% - 10px)
+                            margin-left: 5px
+                            margin-right: 5px
+                            width: calc(100% - 10px)
+                          text: "=items[props.mode].displayState ? items[props.mode].displayState : items[props.mode].state"
+                - component: f7-card
+                  config:
+                    class:
+                      - display-flex
+                      - justify-content-center
+                      - align-items-center
+                      - no-margin
+                    style:
+                      background: var(--f7-searchbar-search-icon-color)
+                      border-radius: 10%
+                      border-top: none
+                      box-shadow: var(--f7-actions-bg-color) 0px 0px 16px inset
+                      height: 40px
+                  slots:
+                    default:
+                      - component: oh-stepper
+                        config:
+                          item: =props.setTemperature
+                          max: =props.maxTemperature
+                          min: =props.minTemperature
+                          raised: true
+                          step: =props.temperatureSteps
+                          style:
+                            --f7-stepper-button-text-color: '=items[props.mode].state === "Auto" ? "rgba(0, 255, 0, 0.9)" : items[props.mode].state === "Manual" ? "rgba(247,208,0,1.00)" : items[props.mode].state === "Boost" ? "rgb(230, 74, 25)" : ""'
+                            --f7-stepper-value-text-color: '=items[props.mode].state === "Auto" ? "rgba(0, 255, 0, 0.9)" : items[props.mode].state === "Manual" ? "rgba(247,208,0,1.00)" : items[props.mode].state === "Boost" ? "rgb(230, 74, 25)" : ""'
+                            backdrop-filter: opacity(88%)
+                            background-color: var(--f7-actions-bg-color)
+                            box-shadow: 0px 0px 7px 2px var(--f7-actions-bg-color)
+                            height: calc(100% - 10px)
+                            margin-left: 5px
+                            margin-right: 5px
+                            width: calc(100% - 10px)

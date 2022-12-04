@@ -4,7 +4,6 @@
 // - cancelTimer
 // - getTimerId
 // - getActiveTimerId
-// - setTimer
 
 
 // Create a timer and persist in cache
