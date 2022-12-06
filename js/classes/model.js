@@ -1,5 +1,7 @@
 load('/openhab/conf/automation/js/helpers/items.js');
 
+const { itemRegistry } = require('@runtime');
+
 class EquipmentController {
   constructor(controller) {
     this.devices = null;
@@ -58,23 +60,14 @@ class EquipmentController {
   }
 }
 
-class ModelItem {
+
+class ModelItem extends items.Item {
   constructor(item) {
-    this.item = item
-    this.name = item.name
-    this.label = item.label
-  };
-
-  getMetadataSettings(key) {
-    return JSON.parse(this.item.getMetadataValue(key));
-  }
-
-  setMetadataSettings(key, value) {
-    if(typeof value === "object") {
-      value = JSON.stringify(value);
+    if(typeof item === "string") {
+      item = items.getItem(item)
     }
-    this.item.updateMetadataValue(key, value);
-  }
+    super(itemRegistry.getItem(item.name))
+  };
 
   getId() {
     return this.name;
@@ -89,21 +82,13 @@ class ModelItem {
   }
 
   getState() {
-    if(this.item.state === null || this.item.state === "NULL") {
+    if(this.state === null || this.state === "NULL") {
       return null;
     }
-    if(this.item.state === "UNDEF") {
+    if(this.state === "UNDEF") {
       return undefined;
     }
-    return this.item.state;
-  }
-
-  postUpdate(value) {
-    return this.item.postUpdate(value);
-  }
-
-  sendCommand(value) {
-    return this.item.sendCommand(value);
+    return this.state;
   }
 
   getLocation() {
@@ -121,7 +106,7 @@ class ModelItem {
 
   getSemanticParent() {
     var parentItem = null;
-    this.item.groupNames.forEach(groupName => {
+    this.groupNames.forEach(groupName => {
       let group = items.getItem(groupName);
       let groupSemanticMetadata = group.getMetadataValue("semantics");
       if(groupSemanticMetadata) {
@@ -139,7 +124,7 @@ class ModelItem {
 
   getParents() {
     var parentItems = new Array();
-    this.item.groupNames.forEach(groupName => {
+    this.groupNames.forEach(groupName => {
       parentItems.push(items.getItem(groupName));
     });
     return parentItems;
@@ -147,7 +132,7 @@ class ModelItem {
 
   getSemanticChilds() {
     var childs = new Array();
-    this.item.members.forEach(memberName => {
+    this.members.forEach(memberName => {
       let member = items.getItem(memberName);
       if(groupSemanticMetadata) {
         if(groupSemanticMetadata.startsWith("Location_")) {
@@ -163,7 +148,7 @@ class ModelItem {
   }
 
   getChilds() {
-    return this.item.members;
+    return this.members;
   }
 
   hasChild(child) {
@@ -235,7 +220,7 @@ class Equipment extends ModelItem {
     }
     if(metadata) {
       Object.keys(metadata).forEach(key => {
-        this.setMetadataSettings(key, metadata[key]);
+        this.updateMetadataValue(key, JSON.stringify(metadata[key]));
       });
     }
     item = new Point(item);
@@ -251,7 +236,7 @@ class Equipment extends ModelItem {
   
   removeInternalItem(item) {
     logger.info("Removing internal item \"" + item.name + "\" on equipment \"" + this.getLabel() + "\"");
-    removeItem(item.item.name);
+    removeItem(item.name);
   }
 }
 

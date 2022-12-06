@@ -53,21 +53,6 @@ function removeItemMemberLink(itemName, memberName) {
   member.removeGroup(item);
 }
 
-function getParentItemInModel(item) {
-  var parentItem = null;
-  if(typeof item === "string") {
-    item = items.getItem(item);
-  }
-  item.groupNames.forEach(groupName => {
-    let group = items.getItem(groupName);
-    let groupSemanticMetadata = group.getMetadataValue("semantics");
-    if(groupSemanticMetadata && groupSemanticMetadata.startsWith("Location_")) {
-      parentItem = group;
-    }
-  });
-  return parentItem;
-}
-
 function itemHasSemanticProperties(item, semanticClass, semanticProperty=null) {
   if(typeof item === "string") {
     item = items.getItem(item);
