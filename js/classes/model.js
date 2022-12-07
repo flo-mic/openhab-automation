@@ -115,7 +115,7 @@ class ModelItem extends items.Item {
         } else if(groupSemanticMetadata.startsWith("Equipment_")) {
           parentItem = new Equipment(group);
         } else if(groupSemanticMetadata.startsWith("Point_")) {
-          childs.push(new Point(group));
+          parentItem = new Point(group);
         }
       }
     });
@@ -157,7 +157,7 @@ class ModelItem extends items.Item {
       child = items.getItem(child, true)
     }
     this.getChilds().forEach(item => {
-        if(item === child) {
+      if(item.name === child.name) {
           hasChild = true; 
         }
     });

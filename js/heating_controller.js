@@ -43,15 +43,14 @@ const requiredWindowItems = {
 // Function generator to pass variables to time outside of this context (variables need to be resolved already now)
 var autoTimerFunction = function(controller) {
   return function() {
-    let now = new Date();
-    let earliest = new Date( now.getTime() - 1000 * 60 );
-    this.devices.forEach(device => {
-      let lastTime = device.getLastSchedulesTime();
-      if(lastTime >= earliest && lastTime <= now) {
+    let earliest = new Date((new Date()).getTime() - 1000 * 60 );
+    controller.devices.forEach(device => {
+      let lastTime = device.getLastScheduledTime();
+      if(lastTime >= earliest && lastTime <= new Date()) {
         if(device.regularMode === "Auto") {
           device.targetTemperature = device.getScheduledTemperature();
         }
-        if(device.getMode() === "Auto" && !this.windowsOpenInLocation(equipment.getLocation())) {
+        if(device.getMode() === "Auto" && controller.countOpenWindowsInLocation(device.getLocation()) === 0) {
           device.setTemperature(device.targetTemperature);
         }
       }
@@ -113,10 +112,10 @@ class HeatingController extends EquipmentController {
         if(event.receivedCommand) {
           this.onModeChange(equipment, event.receivedCommand);
         } else {
-          if(typeof equipment === "Radiator") {
+          if(equipment instanceof RadiatorEquipment) {
             this.scheduleNextExecution();
           }
-          if(typeof equipment === "Window") {
+          if(equipment instanceof WindowEquipment) {
             this.onWindowStateChange(equipment);
           }
         }
@@ -130,11 +129,12 @@ class HeatingController extends EquipmentController {
 
   onModeChange(equipment, mode) {
     cancelTimer(equipment.boostTimerIdx);
+    logger.info("Switching to mode \"" + mode + "\" on \"" + equipment.getLabel() + "\".");
     if(mode === "Auto") {
       equipment.regularMode = mode;
       let temperature = equipment.getScheduledTemperature();
       equipment.targetTemperature = temperature;
-      if(!this.windowsOpenInLocation(equipment.getLocation())) {
+      if(!this.countOpenWindowsInLocation(equipment.getLocation()) > 0) {
         equipment.setTemperature(temperature);
       }
     }
@@ -152,14 +152,20 @@ class HeatingController extends EquipmentController {
 
   onWindowStateChange(equipment) {
     const radiators = this.devices.filter(device => device.getLocation() === equipment.getLocation());
-    if(this.windowsOpenInLocation(equipment.getLocation())) {
+    if(this.countOpenWindowsInLocation(equipment.getLocation()) > 0) {
+      logger.info("Detected \"" + this.countOpenWindowsInLocation + "\" Windows in \"" + equipment.getLocation.getLabel() + "\".")
       radiators.forEach(radiator => {
         radiator.targetTemperature = radiator.getTemperature();
-        radiator.setTemperature(configHeating.windowOpenTemperature);
+        if(radiator.getTemperature() !== configHeating.windowOpenTemperature) {
+          logger.info("Update \"" + radiator.GetLabel() + "\" temperature as windows are open.")
+          radiator.setTemperature(configHeating.windowOpenTemperature);
+        }
       });
     } else {
+      logger.info("No more open windows in \"" + equipment.getLocation().getLabel() + "\" detected.")
       radiators.forEach(radiator => {
         if(radiator.getMode() === "Boost") {
+          logger.info("Switching to boost mode for \"" + radiator.getLabel() + "\".")
           radiator.setTemperature(configHeating.boostModeTemperature);
         } else {
           radiator.setTemperature(radiator.targetTemperature);
@@ -180,7 +186,7 @@ class HeatingController extends EquipmentController {
         equipment = device;
       }
     });
-    this.window.forEach(window => {
+    this.windows.forEach(window => {
       if(window.hasChild(eventItem)) {
         equipment = window;
       }
@@ -212,16 +218,16 @@ class HeatingController extends EquipmentController {
     this.nextExecutionTime = nextTime;
   }
 
-  windowsOpenInLocation(location) {
-    let windowsClosed = true;
+  countOpenWindowsInLocation(location) {
+    let openWindows = 0;
     this.windows.forEach(window => {
-      if(window.getLocation() === location) {
+      if(window.getLocation().getId() === location.getId()) {
         if(window.isOpen()) {
-          windowsClosed = false;
+          openWindows = openWindows + 1;
         }
       }
     });
-    return windowsClosed;
+    return openWindows;
   }
 }
 
