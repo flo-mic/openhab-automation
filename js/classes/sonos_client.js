@@ -1,7 +1,7 @@
 class SonosClient {
 
   constructor(client) {
-    this.controller  = cache.get("SonosController");
+    this.controller  = cache.shared.get("SonosController");
     this.zone        = null;
     this.command     = null;
     this.targetZone  = null;

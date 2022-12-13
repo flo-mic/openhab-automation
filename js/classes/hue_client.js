@@ -1,7 +1,7 @@
 class HueClient {
 
   constructor(client) {
-    this.controller = cache.get("HUEController");
+    this.controller = cache.shared.get("HUEController");
     this.lightbulb      = null;
     this.command        = null;
     this.targetDevice   = null;

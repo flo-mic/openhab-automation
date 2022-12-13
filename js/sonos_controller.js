@@ -92,7 +92,7 @@ class SonosController extends DeviceController {
     this.updateUiConfig();
     this.updateUiRadioConfig();
     logger.info(config.controllerName + " is ready.");
-    cache.put("SonosController", this);
+    cache.shared.put("SonosController", this);
 
   }
 

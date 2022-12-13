@@ -124,7 +124,6 @@ class HeatingController extends EquipmentController {
 
     logger.info(config.controllerName + " is ready.");
     this.scheduleNextExecution();
-    cache.put("HeatingController", this);
   }
 
   onModeChange(equipment, mode) {

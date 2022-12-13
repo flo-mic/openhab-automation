@@ -2,6 +2,8 @@ load('/openhab/conf/automation/js/classes/sonos_client.js');
 load('/openhab/conf/automation/js/classes/hue_client.js');
 load('/openhab/conf/automation/js/helpers/rules.js');
 
+const radioUrl = "http://streams.planetradio.de/planetradio/mp3/playerid:RTFFH/hqlivestream.mp3";
+
 const itemEvents = [
   { 
     itemName: "Praesenz_Wohnzimmer",
@@ -9,7 +11,7 @@ const itemEvents = [
     oldState: "OFF", 
     execute: function () {
       if(items.getItem("TV_Wohnzimmer_Power").state !== "ON") {
-        new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+        new SonosClient("Wohnzimmer").setCommand("play").setAddIfPossible(true).setUri(radioUrl).send();
       }
     }
   },{ 
@@ -26,7 +28,7 @@ const itemEvents = [
     oldState: "OFF", 
     execute: function () {
       if(items.getItem("Sonos_Wohnzimmer_Fernbedienung").state === "PLAY") {
-        new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+        new SonosClient("Schlafzimmer").setCommand("play").setAddIfPossible(true).setUri(radioUrl).send();
       }
       new HueClient("Lampe_Schlafzimmer_Bett").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_Couch").send();
       new HueClient("Lampe_Schlafzimmer_Garten").setCommand("add").setTargetDevice("Lampe_Wohnzimmer_Garten").send();
@@ -50,7 +52,7 @@ const itemEvents = [
     newState: "ON", 
     oldState: "OFF", 
     execute: function () {
-      new SonosClient("Badezimmer").setCommand("play").setAddIfPossible(true).setTuneInRadio("planet").send();
+      new SonosClient("Badezimmer").setCommand("play").setAddIfPossible(true).setUri(radioUrl).send();
     }
   },{ 
     itemName: "Praesenz_Badezimmer",

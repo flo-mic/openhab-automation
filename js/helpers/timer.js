@@ -15,7 +15,7 @@ function addTimer(timerId, myfunction, seconds){
   // Create timer
   var timer  = setTimeout(myfunction, seconds*1000);
   // persist timer in cache
-  cache.put(timerId, timer); 
+  cache.private.put(timerId, timer); 
   // return timer if used ny sub module
   return timer;
 }
@@ -24,7 +24,7 @@ function addTimer(timerId, myfunction, seconds){
 // Get a timer object
 function getTimerId(timerId) {
   // Get timer object from cache
-  return cache.get(timerId);
+  return cache.private.get(timerId);
 }
 
 
@@ -42,9 +42,9 @@ function getActiveTimerId(timerId) {
 // function to cancel a timer
 function cancelTimer(timerId) {
   // If timer exists and is active cancel it and renmove it from cache
-  var timer = cache.get(timerId);
+  var timer = cache.private.get(timerId);
   if(timer) {
     clearTimeout(timer);
   }
-  cache.put(timerId, null);
+  cache.private.put(timerId, null);
 }
