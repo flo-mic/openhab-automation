@@ -53,7 +53,7 @@ class HueController extends EquipmentController {
     });
 
     logger.info(config.controllerName + " is ready.");
-    cache.put("HUEController", this);
+    cache.shared.put("HUEController", this);
   }
 
   getCoordinator(device) {
@@ -198,7 +198,8 @@ class HueEquipment extends Equipment {
     this.colorTransitionSettings = {
       steps: parseInt(steps),
       time: parseInt(time) / parseInt(steps),  
-      color: color.split(",")
+      color: color.split(","),
+      immediateRun: true
     }
 
     logger.info(config.controllerName + " is starting color transition for \"" + this.getLabel() + "\".");
@@ -209,24 +210,30 @@ class HueEquipment extends Equipment {
 
   startColorTransition(device) {
     if(device.colorTransitionSettings.steps > 0) {
-      device.colorTransitionSettings.steps = device.colorTransitionSettings.steps - 1;
       // Function generator to pass variables to time outside of this context (variables need to be resolved already now)
       var execFunction = function(device) {
         return function() {
-          let set = device.colorTransitionSettings;
+          device.colorTransitionSettings.immediateRun = false
+          let settings = device.colorTransitionSettings;
           let color = device.getColor().split(",");
-          let hue = parseInt((parseInt(set.color[0]) - parseInt(color[0])) / (set.steps + 1) + parseInt(color[0]));
-          let saturation = parseInt((parseInt(set.color[1]) - parseInt(color[1])) / (set.steps + 1) + parseInt(color[1]));
-          let brightness = parseInt((parseInt(set.color[2]) - parseInt(color[2])) / (set.steps + 1) + parseInt(color[2]));
+          let hue = parseInt((parseInt(settings.color[0]) - parseInt(color[0])) / (settings.steps) + parseInt(color[0]));
+          let saturation = parseInt((parseInt(settings.color[1]) - parseInt(color[1])) / (settings.steps) + parseInt(color[1]));
+          let brightness = parseInt((parseInt(settings.color[2]) - parseInt(color[2])) / (settings.steps) + parseInt(color[2]));
           device.setColor(hue + "," + saturation + "," + brightness);
           if(device.getBrightness() !== brightness) {
             device.setBrightness(brightness);
           }
+          device.colorTransitionSettings.steps = settings.steps - 1;
           device.startColorTransition(device);
         }
       }
-      addTimer(device.getId() + "_setColorTransition", execFunction(device), device.colorTransitionSettings.time);
+      if(device.colorTransitionSettings.immediateRun) {
+        execFunction(device)();
+      } else {
+        addTimer(device.getId() + "_setColorTransition", execFunction(device), device.colorTransitionSettings.time);
+      }
     } else {
+      logger.info("Transition of \"" + this.getLabel() + "\" finished.")
       device.colorTransitionSettings = null;
     }
   }
@@ -265,8 +272,20 @@ var controllerItem = null;
 scriptLoaded = function () {
   controllerGroupItem = addItem(config.controllerGroupItem, "Group", "HUE Controller Group", undefined, config.controllerTags);
   controllerItem = addItem(config.controllerItem, "String", "HUE Controller Command Item", new Array(controllerGroupItem.name), config.controllerTags);
-  loadedDate = Date.now();
-  controller = new HueController();
+
+  // Check if system is already ready for controller initialization
+  if(items.getItem("System_Startup_Completed").state === "ON") {
+    controller = new HueController();
+  } else {
+    // Add rule to initialize controller after system startup is completed
+    rules.JSRule({
+      id: config.controllerItem,
+      triggers: [triggers.ItemStateUpdateTrigger('System_Startup_Completed', 'ON')],
+      execute: event => {
+        controller = new HueController();
+      }
+    });
+  }
 }
 
 scriptUnloaded = function () {

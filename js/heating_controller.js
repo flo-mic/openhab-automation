@@ -387,8 +387,19 @@ class WindowEquipment extends Equipment {
 var controller = null;
 
 scriptLoaded = function () {
-  loadedDate = Date.now();
-  controller = new HeatingController();
+  // Check if system is already ready for controller initialization
+  if(items.getItem("System_Startup_Completed").state === "ON") {
+    controller = new HeatingController();
+  } else {
+    // Add rule to initialize controller after system startup is completed
+    rules.JSRule({
+      id: config.controllerItem,
+      triggers: [triggers.ItemStateUpdateTrigger('System_Startup_Completed', 'ON')],
+      execute: event => {
+        controller = new HeatingController();
+      }
+    });
+  }
 }
 
 scriptUnloaded = function () {

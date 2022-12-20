@@ -283,7 +283,6 @@ class SonosDevice extends Device {
       if(zoneMembers.length > 1) {
         logger.info("Removing current controller \"" + device.getLabel() + "\" from zone \"" + device.getLabel() + " +" + (zoneMembers.length -1) + "\".");
         this.items["standalone"].sendCommand("ON");
-        this.setControl("PAUSE");
       } else {
         logger.info("Stoping current controller \"" + device.getLabel() + "\".");
         this.setControl("PAUSE");
@@ -316,7 +315,7 @@ class SonosDevice extends Device {
   getItemControllerConfig(item) {
     var conf = null;
     this.items[item].tags.forEach(tag => {
-      if (tag.startsWith(config.controllerName + ":")) {
+      if(tag.startsWith(config.controllerName + ":")) {
         try {
           conf = JSON.parse(tag.split(config.controllerTags + ":")[1]);
         } catch (e) {
@@ -331,7 +330,7 @@ class SonosDevice extends Device {
   setDefaultVolume() {
     let currentTime = new Date();
     let itemConfig = this.getItemControllerConfig("volume");
-    if( itemConfig !== null) {
+    if(itemConfig !== null) {
       var time = null;
       var volume = null;
       itemConfig.defaultVolume.forEach(config => {
@@ -439,8 +438,20 @@ scriptLoaded = function () {
   controllerItem = addItem(config.controllerItem, "String", config.controllerName + " Command Item", new Array(controllerGroupItem.name), config.controllerTags);
   uiConfigItem = addItem(config.controllerUiConfig, "String", config.controllerName + " Ui Config Item", new Array(controllerGroupItem.name), config.controllerTags);
   uiRadioConfigItem = addItem(config.controllerUiRadioConfig, "String", config.controllerName + " Ui Radio Config Item", new Array(controllerGroupItem.name), config.controllerTags);
-  loadedDate = Date.now();
-  controller = new SonosController();
+
+  // Check if system is already ready for controller initialization
+  if(items.getItem("System_Startup_Completed").state === "ON") {
+    controller = new SonosController();
+  } else {
+    // Add rule to initialize controller after system startup is completed
+    rules.JSRule({
+      id: config.controllerItem,
+      triggers: [triggers.ItemStateUpdateTrigger('System_Startup_Completed', 'ON')],
+      execute: event => {
+        controller = new SonosController();
+      }
+    });
+  }
 }
 
 scriptUnloaded = function () {
