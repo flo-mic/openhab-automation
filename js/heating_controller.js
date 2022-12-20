@@ -152,7 +152,7 @@ class HeatingController extends EquipmentController {
   onWindowStateChange(equipment) {
     const radiators = this.devices.filter(device => device.getLocation() === equipment.getLocation());
     if(this.countOpenWindowsInLocation(equipment.getLocation()) > 0) {
-      logger.info("Detected \"" + this.countOpenWindowsInLocation + "\" Windows in \"" + equipment.getLocation.getLabel() + "\".")
+      logger.info("Detected \"" + this.countOpenWindowsInLocation + "\" Windows in \"" + equipment.getLocation().getLabel() + "\".")
       radiators.forEach(radiator => {
         radiator.targetTemperature = radiator.getTemperature();
         if(radiator.getTemperature() !== configHeating.windowOpenTemperature) {
